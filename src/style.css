@@ -17,11 +17,28 @@
 }
 
 @theme {
-  /* clamp(tamaño_mínimo, valor_dinámico, tamaño_máximo) */
-  --text-fluid-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);      /* Párrafos pequeños */
-  --text-fluid-base: clamp(1rem, 0.925rem + 0.375vw, 1.125rem);   /* Texto base */
-  --text-fluid-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);      /* Subtítulos */
-  --text-fluid-title: clamp(1.75rem, 1.25rem + 2.5vw, 3rem);     /* Títulos grandes */
+  --text-body: 0.625rem;       /* 10px */
+  --text-subtitle: 0.875rem;   /* 14px */
+  --text-title: 1rem;          /* 16px */
+  --text-button: 0.6875rem;    /* 11px */
+}
+
+@media (min-width: 768px) {
+:root {
+    --text-body: 0.75rem;       /* 12px */
+    --text-subtitle: 1rem;      /* 16px */
+    --text-title: 1.125rem;     /* 18px */
+    --text-button: 0.8125rem;   /* 13px */
+}
+}
+
+@media (min-width: 1200px) {
+:root {
+    --text-body: 0.875rem;      /* 14px */
+    --text-subtitle: 1.125rem;  /* 18px */
+    --text-title: 1.25rem;      /* 20px */
+    --text-button: 0.9375rem;   /* 15px */
+}
 }
 
 .lexend{
