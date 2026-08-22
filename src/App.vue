@@ -4,10 +4,7 @@ import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
-  <header>
-
-  </header>
-  <nav class="bg-[#141414]">
+  <header class="bg-[#141414]">
     <div class="flex flex-row border-b-4 border-b-[#9D9D9D] p-3">
       <div class="basis-1/16 flex justify-center">
         <button class="hover:cursor-pointer" type="button" id="openMenu">
@@ -26,7 +23,7 @@ import HelloWorld from './components/HelloWorld.vue'
     <div class="flex flex-row bg-[#193264] p-2 justify-center">
       <h2 class="text-white lexend text-fluid-base">Inicio</h2>
     </div>
-  </nav>
+  </header>
   <main>
 
   </main>
