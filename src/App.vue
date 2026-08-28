@@ -78,7 +78,7 @@ watch(
           <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Desarrolladores</router-link>
         </li>
         <li>
-          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Contacto</router-link>
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/Contacto">Contacto</router-link>
         </li>
       </ul>
     </nav>
