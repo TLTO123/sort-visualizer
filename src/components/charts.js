@@ -1,5 +1,5 @@
 import { Chart, BarController, BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend } from 'chart.js';
-
+///LA GRÁFICA QUE GENERA ESTA CONFIGURADA SOLAMENTE PARA LA PÁGINA DE INICIO
 Chart.register(
   BarController,
   BarElement,
@@ -10,7 +10,13 @@ Chart.register(
   Legend
 );
 let bar
-
+/**
+ * Método para generar gráfica de barras
+ * @param {*} dom elemento del dom donde se mostrará la gráfica
+ * @param {*} titulo titulo de la gráfica
+ * @param {*} x nombres de los elementos de la gráfica
+ * @param {*} y valores que tiene cada elemento de la gráfica
+ */
 export const graficaBarra = (dom, titulo, x, y) => {
     
     let data = {
@@ -20,7 +26,8 @@ export const graficaBarra = (dom, titulo, x, y) => {
             backgroundColor: getColors(95),
             borderColor: getColors(),
             data: y,
-            borderWidth: 1
+            borderWidth: 1,
+            barThickness: 70,
         }]
     };
 
@@ -40,8 +47,10 @@ export const graficaBarra = (dom, titulo, x, y) => {
                 },
                 x: {
                     grid:{
-                        display: false
-                    }
+                        display: false,
+                        offset: true
+                    },
+                
                 }
             },
             plugins:{
@@ -51,6 +60,9 @@ export const graficaBarra = (dom, titulo, x, y) => {
                 legend: {
                     display: false,//modificable
                     position: 'top'
+                },
+                tooltip:{
+                    enabled: false
                 }
             }
         }   

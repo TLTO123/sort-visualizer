@@ -1,24 +1,26 @@
 <script setup>
 import { onMounted } from 'vue';
-import {graficaBarra} from '../components/chats'
+import {graficaBarra} from '../components/charts'
+import {RouterLink} from 'vue-router'
 
-const tituloGrafica = 'Rendimiento de Algoritmos';
+
 const etiquetas = ['', '', '', '', '', '', '', '', '', '',''];
-const valores = [45, 12, 28, 35, 25, 10, 5, 50, 40, 20, 15];
+const valores =   [45, 12, 28, 35, 25, 10, 5, 50, 40, 20, 15 ];
 
 onMounted(() => {
-    graficaBarra('grafica-barra', '', etiquetas, valores)
+    graficaBarra('grafica-barra', 'Métodos de ordenamiento', etiquetas, valores)
 })
+
 </script>
 
 <template>
     <div class="container-main">
         <div class="intro">
             <h1 class="intro-title">Comprende los algoritmos de ordenamiento visualmente</h1>
-            <h1>Una plataforma interactiva para ver, entender y comparar el <strong class="font-bold from-pink-400 via-orange-400 to-yellow-400 bg-clip-text text-transparent">comportamiento de las estructuras de datos en tiempo real.</strong></h1>
+            <h1 class="m-5">Una plataforma interactiva para ver, entender y comparar el <strong class="font-bold from-pink-400 via-orange-400 to-yellow-400 bg-clip-text text-transparent">comportamiento de las estructuras de datos en tiempo real.</strong></h1>
         </div>
         <div class="text-intro">
-            <p>
+            <p class="m-5 font-mono">
                 Bienvenido a SortVisualizer. Esta herramienta fue diseñada para transformar conceptos lógicos 
                 abstractos en animaciones claras, intuitivas y dinámicas. Ya sea que estés dando tus primeros 
                 pasos en la programación o quieras profundizar en la eficiencia de tu código, aquí podrás experimentar 
@@ -26,30 +28,33 @@ onMounted(() => {
                 flujo de los datos paso a paso, ajusta la velocidad de ejecución y descubre exactamente qué ocurre detrás
                 de cada intercambio.
             </p>
-            <a href="http://" class="btn-rendimiento p-2 font-black">Ir a la prueba de rendimiento</a>
+            <a class="btn-rendimiento p-2 mt-2">
+                <router-link to="/rendimiento" class="font-black">Ir a la prueba de rendimiento</router-link>
+            </a>
+        
         </div>
         <div class="charts">
-            <canvas id="grafica-barra"></canvas>
+            <canvas id="grafica-barra" class="mt-3"></canvas>
         </div>
-        <div class="cards">
-            <div class="interactivo">
-                <h3 class="sub-title">Interactivo</h3>
-                <p class="">Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real de lento a rápido 
+        <div class="cards pt-10 pb-10">
+            <div class="interactivo mb-10">
+                <h3 class="font-bold mb-2">Interactivo</h3>
+                <p class="pl-4">Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real de lento a rápido 
                     para no perderte ningún detalle. Experimenta de forma directa generando arreglos aleatorios o introduciendo 
                     tus propias listas personalizadas de datos.
                 </p>
             </div>
-            <div class="educativo">
-                <h3 class="sub-title">Educativo</h3>
-                <p>
+            <div class="educativo mb-10">
+                <h3 class="font-bold mb-2">Educativo</h3>
+                <p class="pl-4">
                     Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real de lento a 
                     rápido para no perderte ningún detalle. Experimenta de forma directa generando arreglos aleatorios 
                     o introduciendo tus propias listas personalizadas de datos.
                 </p>
             </div>
-            <div class="medicion-real">
-                <h3 class="sub-title">Medición Real</h3>
-                <p>
+            <div class="medicion-real mb-10">
+                <h3 class="font-bold mb-2">Medición Real</h3>
+                <p class="pl-4">
                     Ve más allá de la teoría de la complejidad algorítmica analizando la eficiencia en un entorno práctico. 
                     La herramienta cuenta con cronómetros integrados de alta precisión que registran el tiempo de ejecución.
                 </p>
@@ -85,9 +90,9 @@ onMounted(() => {
     padding-top: 4%;
     flex-direction: column;
     text-align: center;   
-    height: 25vh;
     gap: 15%; 
     .intro-title {
+        
         margin-bottom: 15px;
         padding-bottom: 15px;
         border-bottom: 2px solid #ccc;
@@ -98,11 +103,22 @@ onMounted(() => {
     flex-direction: column;
     padding: 5vw;
     align-items: center;
-    height: 40vh;
     gap: 15%;
 }
 .cards{
     flex-direction: column;
+    .educativo, 
+    .interactivo,
+    .medicion-real{
+        padding: 2%;
+        background-color: #272727;
+        border: #484848 solid 1px;
+        border-radius: 5px;
+    }
+
+    p{
+        border-left: #FFE77A solid 1px;
+    }
 }
 .font-black{
     color: black !important;
@@ -114,12 +130,10 @@ onMounted(() => {
 }
 
 .charts{
-    padding: 4vw;
     display: flex;
     justify-content: center;
     #grafica-barra{
         height: 400px !important;
-        width: 85vw !important;
     }
 }
 </style>
