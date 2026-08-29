@@ -27,7 +27,7 @@ export const graficaBarra = (dom, titulo, x, y) => {
             borderColor: getColors(),
             data: y,
             borderWidth: 1,
-            barThickness: 70,
+//            barThickness: 70,
         }]
     };
 

@@ -18,7 +18,7 @@ onMounted(() => {
         <div class="intro">
             <h1 class="intro-title">Comprende los algoritmos de ordenamiento visualmente</h1>
             <h1 class="m-5">Una plataforma interactiva para ver, entender y comparar el <strong
-                    class="font-bold from-pink-400 via-orange-400 to-yellow-400 bg-clip-text text-transparent">comportamiento
+                    class="font-bold from-pink-400 via-orange-400 to-yellow-400 bg-clip-text text-white">comportamiento
                     de las estructuras de datos en tiempo real.</strong></h1>
         </div>
         <div class="text-intro">
@@ -73,8 +73,6 @@ onMounted(() => {
 </template>
 
 <style>
-
-
 .intro,
 .text-intro,
 .charts,

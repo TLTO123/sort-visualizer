@@ -17,16 +17,16 @@
             container-form-contacto p-5 [--color-base:#1E1E1E] 
             text-white bg-[linear-gradient(to_bottom,var(--color-base),color-mix(in_srgb,var(--color-base)_95%,white))] 
             px-[5vw] flex ">
-            <form class="bg-[#272727] rounded border border-black w-full">
-                <div class="form">
-                    <label for="txtNombre">Nombre</label>
-                    <input class="bg-[#484848] border border-black rounded" type="text" name="txtNombre" id="txtNombre">
+            <form class="bg-[#272727] border border-black w-full pt-10 lg:pl-25 lg:pr-25 p-7" style="border-radius: 20px;">
+                <div class="form flex flex-col">
+                    <label for="txtNombre" class="mb-3">Nombre</label>
+                    <input class="h-10 bg-[#484848] border border-black rounded mb-8" type="text" name="txtNombre" id="txtNombre">
 
-                    <label for="txtEmail">Correo electrónico</label>
-                    <input class="bg-[#484848] border border-black rounded" type="email" name="txtEmail" id="txtEmail">
+                    <label for="txtEmail" class="mb-3">Correo electrónico</label>
+                    <input class="h-10 bg-[#484848] border border-black rounded mb-8" type="email" name="txtEmail" id="txtEmail">
 
-                    <label for="txtMensaje">Mensaje</label>
-                    <textarea class="bg-[#484848] border border-black rounded" name="txtMensaje" id="txtMensaje"></textarea>
+                    <label for="txtMensaje" class="mb-3">Mensaje</label>
+                    <textarea class="h-40 bg-[#484848] border border-black rounded mb-10" name="txtMensaje" id="txtMensaje"></textarea>
 
                 </div>
 
