@@ -1,5 +1,24 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
+import { RouterView } from 'vue-router';
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+
+// Creamos la instancia para acceder a las propiedades de la ruta actual (ej. path, meta)
+const route = useRoute();
+
+// Declaramos la variable reactiva 'pageTitle' con el valor por defecto 'Inicio'
+const pageTitle = ref('Inicio');
+
+// Configuramos un observador (watcher) sobre la propiedad 'meta.title' de la ruta activa
+watch(
+  () => route.meta.title, // Función evaluadora (getter): extrae la propiedad a vigilar
+  (newTitle) => {        // Callback: se ejecuta cada vez que 'route.meta.title' cambia
+    if (newTitle) {      // Comprobamos que la ruta activa tenga un título definido en su 'meta'
+      pageTitle.value = newTitle; // Asignamos el nuevo título a nuestra variable reactiva
+    }
+  },
+  { immediate: true } // Opción para ejecutar la función inmediatamente al cargar el componente
+);
 
 </script>
 
@@ -21,11 +40,11 @@ import HelloWorld from './components/HelloWorld.vue'
       </div>
     </div>
     <div class="flex flex-row bg-[#193264] p-2 justify-center">
-      <h2 class="text-white lexend text-subtitle">Inicio</h2>
+      <h2 class="text-white lexend text-subtitle">{{ pageTitle }}</h2>
     </div>
   </header>
   <main>
-
+    <RouterView />
   </main>
 
   <!-- Overlay -->
@@ -44,22 +63,22 @@ import HelloWorld from './components/HelloWorld.vue'
     <nav class="p-4 mt-10">
       <ul class="space-y-2">
         <li>
-          <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Inicio</a>
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Inicio</router-link>
         </li>
         <li>
-          <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Catálogo</a>
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Catálogo</router-link>
         </li>
         <li>
-          <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Rendimiento</a>
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/Rendimiento">Rendimiento</router-link>
         </li>
         <li>
-          <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Ordenar mi lista</a>
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Ordenar mi lista</router-link>
         </li>
         <li>
-          <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Desarrolladores</a>
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Desarrolladores</router-link>
         </li>
         <li>
-          <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Contacto</a>
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Contacto</router-link>
         </li>
       </ul>
     </nav>
