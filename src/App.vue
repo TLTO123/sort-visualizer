@@ -69,7 +69,7 @@ watch(
           <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Catálogo</router-link>
         </li>
         <li>
-          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Rendimiento</router-link>
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/rendimiento">Rendimiento</router-link>
         </li>
         <li>
           <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/ordenar-mi-lista">Ordenar mi lista</router-link>
