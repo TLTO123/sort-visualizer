@@ -1,12 +1,21 @@
 <script setup>
-    
+import { onMounted } from 'vue';
+import {graficaBarra} from '../components/chats'
+
+const tituloGrafica = 'Rendimiento de Algoritmos';
+const etiquetas = ['', '', '', '', '', '', '', '', '', '',''];
+const valores = [45, 12, 28, 35, 25, 10, 5, 50, 40, 20, 15];
+
+onMounted(() => {
+    graficaBarra('grafica-barra', '', etiquetas, valores)
+})
 </script>
 
 <template>
     <div class="container-main">
         <div class="intro">
             <h1 class="intro-title">Comprende los algoritmos de ordenamiento visualmente</h1>
-            <h1>Una plataforma interactiva para ver, entender y comparar el <strong>comportamiento de las estructuras de datos en tiempo real.</strong></h1>
+            <h1>Una plataforma interactiva para ver, entender y comparar el <strong class="font-bold from-pink-400 via-orange-400 to-yellow-400 bg-clip-text text-transparent">comportamiento de las estructuras de datos en tiempo real.</strong></h1>
         </div>
         <div class="text-intro">
             <p>
@@ -17,13 +26,15 @@
                 flujo de los datos paso a paso, ajusta la velocidad de ejecución y descubre exactamente qué ocurre detrás
                 de cada intercambio.
             </p>
-            <a href="http://"><strong>Ir a la prueba de rendimiento</strong></a>
+            <a href="http://" class="btn-rendimiento p-2 font-black">Ir a la prueba de rendimiento</a>
         </div>
-        <div class="charts"></div>
+        <div class="charts">
+            <canvas id="grafica-barra"></canvas>
+        </div>
         <div class="cards">
             <div class="interactivo">
                 <h3 class="sub-title">Interactivo</h3>
-                <p>Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real de lento a rápido 
+                <p class="">Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real de lento a rápido 
                     para no perderte ningún detalle. Experimenta de forma directa generando arreglos aleatorios o introduciendo 
                     tus propias listas personalizadas de datos.
                 </p>
@@ -73,7 +84,9 @@
 .intro{
     padding-top: 4%;
     flex-direction: column;
-    text-align: center;    
+    text-align: center;   
+    height: 25vh;
+    gap: 15%; 
     .intro-title {
         margin-bottom: 15px;
         padding-bottom: 15px;
@@ -85,8 +98,28 @@
     flex-direction: column;
     padding: 5vw;
     align-items: center;
+    height: 40vh;
+    gap: 15%;
 }
 .cards{
     flex-direction: column;
+}
+.font-black{
+    color: black !important;
+}
+.btn-rendimiento{
+    background-color: #FFE77A;
+    border-radius: 5px;
+    
+}
+
+.charts{
+    padding: 4vw;
+    display: flex;
+    justify-content: center;
+    #grafica-barra{
+        height: 400px !important;
+        width: 85vw !important;
+    }
 }
 </style>
