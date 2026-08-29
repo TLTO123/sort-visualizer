@@ -32,8 +32,7 @@ const progresoVelocidad = ref(30);
           min="1" 
           max="100" 
           v-model="progresoVelocidad"
-          :style="{ background: `linear-gradient(to right, #1F3B8A ${progresoVelocidad}%, #484848 ${progresoVelocidad}%)` }"
-        >
+          :style="{ background: `linear-gradient(to right, #1F3B8A ${progresoVelocidad}%, #484848 ${progresoVelocidad}%)` }">
       </div>
     </section>
 
