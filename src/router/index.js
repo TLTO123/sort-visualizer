@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+
 import OrdenarMiLista from "../views/OrdenarMiLista.vue";
 import Inicio from "../views/Inicio.vue";
 import Rendimiento from "../views/Rendimiento.vue";
@@ -9,12 +10,13 @@ import Desarrolladores from "../views/Desarrolladores.vue";
 
 const router = createRouter({
     history: createWebHistory(),
+
     routes: [
         {
             path: "/",
             name: "Inicio",
             component: Inicio,
-            meta: { title: 'Inicio' }
+            meta: { title: "Inicio" }
         },
         {
             path: "/catalogo",
@@ -26,13 +28,13 @@ const router = createRouter({
             path: "/ordenar-mi-lista",
             name: "OrdenarMiLista",
             component: OrdenarMiLista,
-            meta: { title: 'Ordenar mi lista' }
+            meta: { title: "Ordenar mi lista" }
         },
         {
             path: "/rendimiento",
             name: "Rendimiento",
             component: Rendimiento,
-            meta: { title: 'Rendimiento' }
+            meta: { title: "Rendimiento" }
         },
         {
             path: "/desarrolladores",
@@ -44,7 +46,7 @@ const router = createRouter({
             path: "/contacto",
             name: "Contacto",
             component: Contacto,
-            meta: {title: 'Contacto'}
+            meta: { title: "Contacto" }
         }
     ]
 });
