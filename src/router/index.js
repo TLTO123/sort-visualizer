@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import OrdenarMiLista from "../views/OrdenarMiLista.vue";
 import Inicio from "../views/Inicio.vue";
 import Rendimiento from "../views/Rendimiento.vue";
+import Contacto from "../views/Contacto.vue";
+
 
 const router = createRouter({
     history: createWebHistory(),
@@ -23,6 +25,12 @@ const router = createRouter({
             name: "Rendimiento",
             component: Rendimiento,
             meta: { title: 'Rendimiento' }
+        },
+        {
+            path: "/contacto",
+            name: "Contacto",
+            component: Contacto,
+            meta: {title: 'Contacto'}
         }
     ]
 });
