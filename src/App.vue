@@ -47,7 +47,7 @@ watch(
     <RouterView />
   </main>
 
-  <footer class="bg-black p-4 fixed bottom-0 min-w-full">
+  <footer class="bg-black p-4 bottom-0 min-w-full">
     <p class="text-white text-center mono text-body">© 2026 SortVisualizer. Todos los derechos reservados.</p>
   </footer>
 
