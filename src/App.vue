@@ -47,7 +47,11 @@ import HelloWorld from './components/HelloWorld.vue'
           <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Inicio</a>
         </li>
         <li>
+<<<<<<< Updated upstream
           <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Catálogo</a>
+=======
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/catalogo">Catálogo</router-link>
+>>>>>>> Stashed changes
         </li>
         <li>
           <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Rendimiento</a>
@@ -56,7 +60,11 @@ import HelloWorld from './components/HelloWorld.vue'
           <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Ordenar mi lista</a>
         </li>
         <li>
+<<<<<<< Updated upstream
           <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Desarrolladores</a>
+=======
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/desarrolladores">Desarrolladores</router-link>
+>>>>>>> Stashed changes
         </li>
         <li>
           <a href="/" class="block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500">Contacto</a>
