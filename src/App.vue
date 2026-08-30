@@ -23,7 +23,7 @@ watch(
 </script>
 
 <template>
-  <header class="bg-[#141414]">
+  <header class="bg-[#141414] sticky top-0 z-50">
     <div class="flex flex-row border-b-4 border-b-[#9D9D9D] p-3">
       <div class="basis-1/16 flex justify-center">
         <button class="hover:cursor-pointer" type="button" id="openMenu">
@@ -46,6 +46,10 @@ watch(
   <main>
     <RouterView />
   </main>
+
+  <footer class="bg-black p-4 fixed bottom-0 min-w-full">
+    <p class="text-white text-center mono text-body">© 2026 SortVisualizer. Todos los derechos reservados.</p>
+  </footer>
 
   <!-- Overlay -->
   <div id="overlay" class="fixed inset-0 z-40 hidden bg-black/50"></div>
