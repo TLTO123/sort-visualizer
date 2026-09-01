@@ -47,7 +47,7 @@ watch(
     <RouterView />
   </main>
 
-  <footer class="bg-black p-4 fixed bottom-0 min-w-full">
+  <footer class="bg-black p-4 bottom-0 min-w-full">
     <p class="text-white text-center mono text-body">© 2026 SortVisualizer. Todos los derechos reservados.</p>
   </footer>
 
@@ -70,7 +70,7 @@ watch(
           <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Inicio</router-link>
         </li>
         <li>
-          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Catálogo</router-link>
+          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/catalogo">Catálogo</router-link>
         </li>
         <li>
           <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/rendimiento">Rendimiento</router-link>
@@ -79,7 +79,9 @@ watch(
           <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/ordenar-mi-lista">Ordenar mi lista</router-link>
         </li>
         <li>
-          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Desarrolladores</router-link>
+          <li>
+    <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/desarrolladores">Desarrolladores</router-link>
+</li>
         </li>
         <li>
           <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/Contacto">Contacto</router-link>
