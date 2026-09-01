@@ -18,7 +18,7 @@
         </div>
     </section>
 
-    <section class="w-full py-6 px-4" aria-labelledby="titulo-config">
+    <section class="fondo-gradiente w-full py-6 px-4" aria-labelledby="titulo-config">
 
         <!-- Tarjeta contenedora -->
         <div

@@ -90,7 +90,7 @@ const algoritmos = [
           {{ algoritmo.descripcion }}
         </p>
 
-        <div class="datos">
+        <div class="datos lexend">
           <div class="dato">
             <span>Dificultad</span>
             <strong>{{ algoritmo.dificultad }}</strong>
@@ -103,7 +103,7 @@ const algoritmos = [
             ></div>
           </div>
 
-          <div class="dato complejidad">
+          <div class="dato complejidad lexend">
             <span>Complejidad</span>
             <strong>{{ algoritmo.complejidad }}</strong>
           </div>

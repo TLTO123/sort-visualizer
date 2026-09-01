@@ -16,13 +16,11 @@ onMounted(() => {
 <template>
     <div class="container-main">
         <div class="intro">
-            <h1 class="intro-title">Comprende los algoritmos de ordenamiento visualmente</h1>
-            <h1 class="m-5">Una plataforma interactiva para ver, entender y comparar el <strong
-                    class="font-bold from-pink-400 via-orange-400 to-yellow-400 bg-clip-text text-white">comportamiento
-                    de las estructuras de datos en tiempo real.</strong></h1>
+            <h1 class="intro-title text-title lexend">Comprende los algoritmos de ordenamiento visualmente</h1>
+            <h1 class="m-5 lexend text-subtitle">Una plataforma interactiva para ver, entender y comparar el <span class="bg-linear-to-r from-[#ED9C71] to-[#F9DC8A] bg-clip-text text-transparent">comportamiento de las</span> <span class="bg-linear-to-r from-[#3BA4B3] to-[#40D3E1] bg-clip-text text-transparent">estructuras de datos en tiempo real.</span></h1>
         </div>
         <div class="text-intro">
-            <p class="m-5 font-mono">
+            <p class="m-5 text-subtitle mono">
                 Bienvenido a SortVisualizer. Esta herramienta fue diseñada para transformar conceptos lógicos
                 abstractos en animaciones claras, intuitivas y dinámicas. Ya sea que estés dando tus primeros
                 pasos en la programación o quieras profundizar en la eficiencia de tu código, aquí podrás experimentar
@@ -32,7 +30,7 @@ onMounted(() => {
                 de cada intercambio.
             </p>
             <a class="btn-rendimiento p-2 mt-2">
-                <router-link to="/rendimiento" class="font-black">Ir a la prueba de rendimiento</router-link>
+                <router-link to="/rendimiento" class="font-black lexend text-button">Ir a la prueba de rendimiento</router-link>
             </a>
 
         </div>
@@ -41,8 +39,8 @@ onMounted(() => {
         </div>
         <div class="cards pt-10 pb-10">
             <div class="interactivo mb-10 p-5">
-                <h3 class="font-bold mb-2">Interactivo</h3>
-                <p class="pl-4">Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real
+                <h3 class="mb-2 lexend text-subtitle">Interactivo</h3>
+                <p class="pl-4 mono text-body">Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real
                     de lento a rápido
                     para no perderte ningún detalle. Experimenta de forma directa generando arreglos aleatorios o
                     introduciendo
@@ -50,16 +48,16 @@ onMounted(() => {
                 </p>
             </div>
             <div class="educativo mb-10 p-5">
-                <h3 class="font-bold mb-2">Educativo</h3>
-                <p class="pl-4">
+                <h3 class="mb-2 lexend text-subtitle">Educativo</h3>
+                <p class="pl-4 mono text-body">
                     Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real de lento a
                     rápido para no perderte ningún detalle. Experimenta de forma directa generando arreglos aleatorios
                     o introduciendo tus propias listas personalizadas de datos.
                 </p>
             </div>
             <div class="medicion-real mb-10 p-5">
-                <h3 class="font-bold mb-2">Medición Real</h3>
-                <p class="pl-4">
+                <h3 class="mb-2 lexend text-subtitle">Medición Real</h3>
+                <p class="pl-4 mono text-body">
                     Ve más allá de la teoría de la complejidad algorítmica analizando la eficiencia en un entorno
                     práctico.
                     La herramienta cuenta con cronómetros integrados de alta precisión que registran el tiempo de
@@ -131,7 +129,7 @@ onMounted(() => {
 
 .btn-rendimiento {
     background-color: #FFE77A;
-    border-radius: 5px;
+    border-radius: 10px;
 
 }
 

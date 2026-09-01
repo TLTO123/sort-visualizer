@@ -7,17 +7,24 @@ const progresoVelocidad = ref(30);
 
 <template>
   <div class="contenedor">
-    <header class="cabecera">
-      <h2 class="subtitulo">Prueba de rendimiento   (Demostración simultánea)</h2>
-      <p class="descripcion">
-        Compara el rendimiento de los diferentes algoritmos de ordenamiento mediante una simulación interactiva. 
-        Genera un conjunto de datos, ajusta la velocidad de ejecución y observa el tiempo que tarda cada método 
-        en completar el proceso.
+    <header class="cabecera lexend">
+      <h2 class="subtitulo text-title">Prueba de rendimiento   (Demostración simultánea)</h2>
+      <p class="descripcion text-subtitle">
+        Compara el rendimiento de los diferentes algoritmos de ordenamiento mediante
+        una simulación interactiva.
+
+        <span class="bg-linear-to-r from-[#ED9C71] to-[#F9DC8A] bg-clip-text text-transparent">
+          Genera un conjunto de datos, ajusta la velocidad de
+        </span>
+
+        <span class="bg-linear-to-r from-[#3BA4B3] to-[#40D3E1] bg-clip-text text-transparent">
+          ejecución y observa el tiempo que tarda cada método en completar el proceso.
+        </span>
       </p>
     </header>
 
     <section class="controles-rendimiento">
-      <div class="botones">
+      <div class="botones lexend text-button">
         <button class="btn">Generar nueva lista aleatoria</button>
         <button class="btn">Iniciar</button>
         <button class="btn">Pausar</button>
@@ -25,7 +32,7 @@ const progresoVelocidad = ref(30);
       </div>
       
       <div class="rango-velocidad">
-        <label for="velocidad">Velocidad</label>
+        <label for="velocidad" class="lexend text-button">Velocidad</label>
         <input 
           type="range" 
           id="velocidad" 
@@ -37,28 +44,28 @@ const progresoVelocidad = ref(30);
     </section>
 
     <section class="resultados-grid">
-      <article class="tarjeta-algoritmo">
-        <h3>Burbuja (Bidireccional)</h3>
+      <article class="tarjeta-algoritmo lexend">
+        <h3 class="text-subtitle">Burbuja (Bidireccional)</h3>
         <figure class="grafico"></figure>
-        <time class="cronometro">00:00:00</time>
+        <time class="cronometro text-button">00:00:00</time>
       </article>
 
-      <article class="tarjeta-algoritmo">
-        <h3>Ordenamiento por Selección</h3>
+      <article class="tarjeta-algoritmo lexend">
+        <h3 class="text-subtitle">Ordenamiento por Selección</h3>
         <figure class="grafico"></figure>
-        <time class="cronometro">00:00:00</time>
+        <time class="cronometro text-button">00:00:00</time>
       </article>
 
-      <article class="tarjeta-algoritmo">
-        <h3>Ordenamiento por Inserción</h3>
+      <article class="tarjeta-algoritmo lexend">
+        <h3 class="text-subtitle">Ordenamiento por Inserción</h3>
         <figure class="grafico"></figure>
-        <time class="cronometro">00:00:00</time>
+        <time class="cronometro text-button">00:00:00</time>
       </article>
 
-      <article class="tarjeta-algoritmo">
-        <h3>Quicksort (Ordenamiento rápido)</h3>
+      <article class="tarjeta-algoritmo lexend">
+        <h3 class="text-subtitle">Quicksort (Ordenamiento rápido)</h3>
         <figure class="grafico"></figure>
-        <time class="cronometro">00:00:00</time>
+        <time class="cronometro text-button">00:00:00</time>
       </article>
     </section>
   </div>
@@ -82,13 +89,10 @@ const progresoVelocidad = ref(30);
 }
 
 .subtitulo {
-  font-size: 1.2rem;
-  font-weight: bold;
   margin-bottom: 1.5rem;
 }
 
 .descripcion {
-  font-size: 0.9rem;
   line-height: 1.5;
 }
 
@@ -116,8 +120,6 @@ const progresoVelocidad = ref(30);
   color: #000000;
   border: none;
   border-radius: 10px;
-  font-weight: bold;
-  font-size: 0.85rem;
 }
 
 .btn {
@@ -136,7 +138,6 @@ const progresoVelocidad = ref(30);
   gap: 1rem;
   width: 100%;
   max-width: 400px;
-  font-size: 0.85rem;
 }
 
 input[type=range] {
@@ -175,7 +176,6 @@ input[type=range]::-webkit-slider-thumb {
 }
 
 .tarjeta-algoritmo h3 {
-  font-size: 1rem;
   margin-bottom: 1.5rem;
 }
 
@@ -188,8 +188,6 @@ input[type=range]::-webkit-slider-thumb {
 
 .cronometro {
   padding: 0.4rem 1.2rem;
-  font-family: monospace;
-  font-size: 1rem;
 }
 
 /* Media Queries */
