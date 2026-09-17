@@ -1,4 +1,249 @@
 <script setup>
+import { ref, onMounted, computed, watch } from 'vue';
+import * as d3 from 'd3';
+
+// Referencias de la interfaz
+const valoresInput = ref("26, 87, 30, 19, 63, 83, 27, 88, 81, 26, 79, 75, 76, 84, 36");
+const algoritmoSeleccionado = ref("selection");
+const velocidadSlider = ref(50);
+const estaPausado = ref(false);
+const contenedorGrafico = ref(null);
+
+// Variables de estado
+let datos = [];
+let algoritmoPausado = null;
+let temporizadorAnimacion = null;
+let svg = null;
+
+// Lógica del Cronómetro
+const tiempoInicio = ref(0);
+const tiempoActual = ref(0);
+const tiempoPausadoAcumulado = ref(0);
+let timerId = null;
+
+const tiempoFormateado = computed(() => {
+    const totalMs = tiempoActual.value - tiempoInicio.value;
+    if (totalMs <= 0) return "00:00:00";
+    
+    const min = Math.floor(totalMs / 60000).toString().padStart(2, '0');
+    const sec = Math.floor((totalMs % 60000) / 1000).toString().padStart(2, '0');
+    const cs = Math.floor((totalMs % 1000) / 10).toString().padStart(2, '0'); // Centésimas
+    
+    return `${min}:${sec}:${cs}`;
+});
+
+const configSVG = { ancho: 800, alto: 350, margen: 40 };
+const velocidadMs = computed(() => 1010 - (velocidadSlider.value * 10));
+
+onMounted(() => {
+  svg = d3.select(contenedorGrafico.value)
+    .append("svg")
+    .attr("width", "100%")
+    .attr("height", configSVG.alto)
+    .attr("viewBox", `0 0 ${configSVG.ancho} ${configSVG.alto}`) // Hace el SVG responsivo
+    .attr("preserveAspectRatio", "xMidYMid meet");
+
+  parsearInputYRenderizar();
+});
+
+// Selector de colores basado en el estado
+const obtenerColor = (estado) => {
+    if (estado === 'comparando') return '#FFB3BA'; // Rosa claro
+    if (estado === 'minimo') return '#7DD3FC';     // Azul claro
+    if (estado === 'ordenado') return '#374151';   // Gris un poco más oscuro
+    return '#4B5563'; // Gris oscuro base (default)
+};
+
+function renderizarBarras(arreglo, duracion = 0) {
+  if (!svg) return;
+  
+  const anchoBarra = (configSVG.ancho - (configSVG.margen * 2)) / arreglo.length;
+  const espacio = 8;
+  const valorMaximo = d3.max(arreglo, d => d.valor) || 1;
+  const escalaY = d3.scaleLinear().domain([0, valorMaximo]).range([0, configSVG.alto - 60]); 
+
+  // 1. Renderizar Rectángulos (Barras)
+  const barras = svg.selectAll("rect.barra")
+    .data(arreglo, d => d.id);
+
+  barras.enter()
+    .append("rect")
+    .attr("class", "barra")
+    .attr("y", configSVG.alto)
+    .attr("height", 0)
+    .attr("rx", 6) // Bordes redondeados de la imagen
+    .attr("ry", 6)
+    .merge(barras)
+    .transition().duration(duracion)
+    .attr("x", (d, i) => i * anchoBarra + configSVG.margen)
+    .attr("y", d => configSVG.alto - escalaY(d.valor))
+    .attr("width", anchoBarra - espacio)
+    .attr("height", d => escalaY(d.valor))
+    .attr("fill", d => obtenerColor(d.estado));
+
+  barras.exit().remove();
+
+  // 2. Renderizar Textos (Valores encima de las barras)
+  const textos = svg.selectAll("text.etiqueta")
+    .data(arreglo, d => d.id);
+
+  textos.enter()
+    .append("text")
+    .attr("class", "etiqueta text-white lexend font-bold text-sm")
+    .attr("text-anchor", "middle")
+    .attr("fill", "#ffffff")
+    .attr("y", configSVG.alto)
+    .merge(textos)
+    .text(d => d.valor)
+    .transition().duration(duracion)
+    .attr("x", (d, i) => (i * anchoBarra + configSVG.margen) + ((anchoBarra - espacio) / 2))
+    .attr("y", d => configSVG.alto - escalaY(d.valor) - 10); // 10px arriba de la barra
+
+  textos.exit().remove();
+}
+
+function* selectionSortGenerador(arreglo) {
+  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
+  let n = arr.length;
+  
+  for (let i = 0; i < n - 1; i++) {
+    let minIdx = i;
+    arr[minIdx].estado = 'minimo';
+    yield { arr: [...arr] }; // Renderiza el azul
+
+    for (let j = i + 1; j < n; j++) {
+      arr[j].estado = 'comparando';
+      yield { arr: [...arr] }; // Renderiza el rosa temporalmente
+      
+      if (arr[j].valor < arr[minIdx].valor) {
+        arr[minIdx].estado = 'default'; 
+        minIdx = j;
+        arr[minIdx].estado = 'minimo'; // Nuevo azul
+        yield { arr: [...arr] };
+      } else {
+        arr[j].estado = 'default';
+      }
+    }
+
+    if (minIdx !== i) {
+      let temp = arr[i];
+      arr[i] = arr[minIdx];
+      arr[minIdx] = temp;
+      yield { arr: [...arr] }; // Anima el intercambio
+    }
+    arr[i].estado = 'ordenado';
+  }
+  arr[n - 1].estado = 'ordenado';
+  yield { arr: [...arr], finalizado: true };
+}
+
+// Controladores
+const parsearInputYRenderizar = () => {
+  const valores = valoresInput.value.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+  datos = valores.map(v => ({ id: crypto.randomUUID(), valor: v, estado: 'default' }));
+  renderizarBarras(datos, 0);
+};
+
+const iniciarCronometro = () => {
+    if (!timerId) {
+        tiempoInicio.value = Date.now() - tiempoPausadoAcumulado.value;
+        timerId = setInterval(() => {
+            tiempoActual.value = Date.now();
+        }, 10);
+    }
+};
+
+const detenerCronometro = () => {
+    if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+        tiempoPausadoAcumulado.value = tiempoActual.value - tiempoInicio.value;
+    }
+};
+
+const reproducirSiguientePaso = () => {
+  if (!algoritmoPausado) return;
+  const paso = algoritmoPausado.next();
+  
+  if (paso.done || (paso.value && paso.value.finalizado)) {
+    algoritmoPausado = null;
+    detenerCronometro(); // El algoritmo terminó
+    estaPausado.value = false; // Resetear botón
+    if (paso.value) renderizarBarras(paso.value.arr, velocidadMs.value);
+    return;
+  }
+
+  renderizarBarras(paso.value.arr, velocidadMs.value);
+  temporizadorAnimacion = setTimeout(reproducirSiguientePaso, velocidadMs.value + 20);
+};
+
+watch(valoresInput, () => {
+  // 1. Detener cualquier ordenamiento que esté en proceso
+  if (temporizadorAnimacion) {
+    clearTimeout(temporizadorAnimacion);
+    temporizadorAnimacion = null;
+  }
+  
+  // 2. Apagar y resetear el cronómetro
+  detenerCronometro();
+  algoritmoPausado = null;
+  tiempoPausadoAcumulado.value = 0;
+  tiempoActual.value = 0;
+  estaPausado.value = false; // <-- Restablece el botón a "Pausar"
+  tiempoInicio.value = 0;
+  
+  // 3. Leer el nuevo texto y dibujar la previsualización al instante
+  parsearInputYRenderizar();
+});
+
+const iniciarOrdenamiento = () => {
+  if (temporizadorAnimacion) clearTimeout(temporizadorAnimacion);
+  parsearInputYRenderizar();
+  
+  tiempoPausadoAcumulado.value = 0;
+  tiempoActual.value = 0;
+  estaPausado.value = false; // Resetear botón
+  iniciarCronometro();
+
+  algoritmoPausado = selectionSortGenerador(datos);
+  reproducirSiguientePaso();
+};
+
+const pausarOrdenamiento = () => {
+  if (temporizadorAnimacion) {
+    clearTimeout(temporizadorAnimacion);
+    temporizadorAnimacion = null;
+    detenerCronometro();
+    estaPausado.value = true;
+  } else if (algoritmoPausado) {
+    iniciarCronometro();
+    reproducirSiguientePaso();
+    estaPausado.value = false;
+  }
+};
+
+const reiniciarOrdenamiento = () => {
+  // 1. Detener cualquier animación en curso de forma segura
+  if (temporizadorAnimacion) {
+    clearTimeout(temporizadorAnimacion);
+    temporizadorAnimacion = null;
+  }
+  
+  // 2. Detener el intervalo del cronómetro
+  detenerCronometro();
+  
+  // 3. Resetear todas las variables de tiempo a cero
+  tiempoPausadoAcumulado.value = 0;
+  tiempoActual.value = 0;
+  tiempoInicio.value = 0; 
+  
+  // 4. Resetear los estados del reproductor y botón
+  algoritmoPausado = null;
+  estaPausado.value = false; 
+  
+  // 5. Redibujar el gráfico en su estado inicial
+  parsearInputYRenderizar();
+};
 </script>
 
 <template>
@@ -32,7 +277,7 @@
             <!-- Campo de entrada de valores -->
             <div class="input-group">
                 <label for="values" class="sr-only">Ingrese los valores</label>
-                <textarea id="values" name="values" aria-describedby="help-values"
+                <textarea v-model="valoresInput" id="values" name="values" aria-describedby="help-values"
                     placeholder="Ingrese los valores separados por comas"
                     class="w-full h-32 bg-[#444446] border-2 border-[#000000] text-gray-100 placeholder-gray-300 text-center rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-[#f1d374] resize-none text-body lexend flex items-center justify-center leading-loose"></textarea>
             </div>
@@ -43,7 +288,7 @@
                     Seleccionar método de ordenamiento
                 </label>
                 <div class="relative">
-                    <select id="algoritmo" name="algoritmo"
+                    <select v-model="algoritmoSeleccionado" id="algoritmo" name="algoritmo"
                         class="w-full bg-[#444446] border-2 border-[#000000] text-gray-100 text-body lexend rounded-xl px-4 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-[#f1d374] cursor-pointer pr-10">
                         <option value="bubble">Burbuja</option>
                         <option value="selection">Selección</option>
@@ -62,15 +307,15 @@
             <!-- Botones de control y slider de velocidad -->
             <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
                 <div class="flex flex-wrap items-center gap-3">
-                    <button type="button"
+                    <button @click="iniciarOrdenamiento" type="button"
                         class="bg-[#FFE77A] hover:bg-[#e0c263] text-black lexend px-6 py-2 rounded-xl text-button transition-colors shadow-sm">
                         Iniciar
                     </button>
-                    <button type="button"
+                    <button @click="pausarOrdenamiento" type="button"
                         class="bg-[#FFE77A] hover:bg-[#e0c263] text-black lexend px-6 py-2 rounded-xl text-button transition-colors shadow-sm">
-                        Pausar
+                        {{ estaPausado ? 'Reanudar' : 'Pausar' }}
                     </button>
-                    <button type="button"
+                    <button @click="reiniciarOrdenamiento" type="button"
                         class="bg-[#FFE77A] hover:bg-[#e0c263] text-black lexend px-6 py-2 rounded-xl text-button transition-colors shadow-sm">
                         Reiniciar
                     </button>
@@ -79,7 +324,7 @@
                 <!-- Deslizador de velocidad -->
                 <div class="flex items-center gap-3 text-body lexend text-gray-200">
                     <label for="velocidad">Velocidad</label>
-                    <input type="range" id="velocidad" min="1" max="100"
+                    <input type="range" v-model="velocidadSlider" id="velocidad" min="1" max="100"
                         class="w-36 sm:w-48 h-2 bg-[#444446] rounded-lg appearance-none cursor-pointer accent-blue-600">
                 </div>
             </div>
@@ -93,11 +338,11 @@
             Resultado del ordenamiento
         </h2>
         <div class="max-w-4xl my-4 mx-auto bg-[#1e1e20] border-2 border-[#000000] rounded-3xl p-6 sm:p-8 text-white shadow-2xl space-y-6">
-            <figure class="grafico">
+            <figure ref="contenedorGrafico" class="grafico">
                 <!-- gráfico dinámico -->
             </figure>
             <time class="timer bg-[#FFE77A] text-black lexend px-6 py-2 rounded-xl text-button">
-                00:00:00
+                {{ tiempoFormateado }}
             </time>
         </div>
     </section>
