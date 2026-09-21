@@ -4,7 +4,7 @@ import * as d3 from 'd3';
 
 // Referencias de la interfaz
 const valoresInput = ref("26, 87, 30, 19, 63, 83, 27, 88, 81, 26, 79, 75, 76, 84, 36");
-const algoritmoSeleccionado = ref("selection");
+const algoritmoSeleccionado = ref("bubble");
 const velocidadSlider = ref(50);
 const estaPausado = ref(false);
 const contenedorGrafico = ref(null);
@@ -32,18 +32,34 @@ const tiempoFormateado = computed(() => {
     return `${min}:${sec}:${cs}`;
 });
 
-const configSVG = { ancho: 800, alto: 350, margen: 40 };
+const configSVG = { ancho: 800, alto: 450, margen: 15 };
 const velocidadMs = computed(() => 1010 - (velocidadSlider.value * 10));
 
 onMounted(() => {
+  // 1. Obtener el ancho real del contenedor en la pantalla del usuario
+  configSVG.ancho = contenedorGrafico.value.clientWidth || 800;
+
+  // 2. Crear el SVG usando dimensiones fijas (sin viewBox)
   svg = d3.select(contenedorGrafico.value)
     .append("svg")
-    .attr("width", "100%")
-    .attr("height", configSVG.alto)
-    .attr("viewBox", `0 0 ${configSVG.ancho} ${configSVG.alto}`) // Hace el SVG responsivo
-    .attr("preserveAspectRatio", "xMidYMid meet");
+    .attr("width", configSVG.ancho)
+    .attr("height", configSVG.alto);
 
   parsearInputYRenderizar();
+
+  // 3. Escuchar cambios de tamaño (por si el usuario rota el móvil)
+  window.addEventListener('resize', () => {
+    if (!contenedorGrafico.value) return;
+    
+    // Recalcular el ancho y actualizar el SVG instantáneamente
+    configSVG.ancho = contenedorGrafico.value.clientWidth;
+    svg.attr("width", configSVG.ancho);
+    
+    // Redibujar las barras para que se adapten al nuevo espacio
+    if (datos.length > 0) {
+      renderizarBarras(datos, 0);
+    }
+  });
 });
 
 // Selector de colores basado en el estado
@@ -58,9 +74,10 @@ function renderizarBarras(arreglo, duracion = 0) {
   if (!svg) return;
   
   const anchoBarra = (configSVG.ancho - (configSVG.margen * 2)) / arreglo.length;
-  const espacio = 8;
+  // Si la barra es muy estrecha, reducimos el espacio entre ellas para aprovechar píxeles
+  const espacio = anchoBarra > 15 ? 6 : 2; 
   const valorMaximo = d3.max(arreglo, d => d.valor) || 1;
-  const escalaY = d3.scaleLinear().domain([0, valorMaximo]).range([0, configSVG.alto - 60]); 
+  const escalaY = d3.scaleLinear().domain([0, valorMaximo]).range([0, configSVG.alto - 50]);
 
   // 1. Renderizar Rectángulos (Barras)
   const barras = svg.selectAll("rect.barra")
@@ -95,6 +112,9 @@ function renderizarBarras(arreglo, duracion = 0) {
     .attr("y", configSVG.alto)
     .merge(textos)
     .text(d => d.valor)
+    // Usamos opacity como interruptor infalible y reevaluamos el tamaño en cada render
+    .style("opacity", anchoBarra < 30 ? 0 : 1)
+    .attr("font-size", anchoBarra < 40 ? "11px" : "14px")
     .transition().duration(duracion)
     .attr("x", (d, i) => (i * anchoBarra + configSVG.margen) + ((anchoBarra - espacio) / 2))
     .attr("y", d => configSVG.alto - escalaY(d.valor) - 10); // 10px arriba de la barra
@@ -102,6 +122,8 @@ function renderizarBarras(arreglo, duracion = 0) {
   textos.exit().remove();
 }
 
+// Funciones que ejecutan los métodos de ordenamiento
+// --- MÉTODO SELECCIÓN (SELECTION SORT) ---
 function* selectionSortGenerador(arreglo) {
   let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
   let n = arr.length;
@@ -134,6 +156,61 @@ function* selectionSortGenerador(arreglo) {
     arr[i].estado = 'ordenado';
   }
   arr[n - 1].estado = 'ordenado';
+  yield { arr: [...arr], finalizado: true };
+}
+
+// --- MÉTODO QUICKSORT ---
+function* quickSortGenerador(arreglo) {
+  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
+  
+  // Función partición interna
+  function* particion(low, high) {
+    let pivotIdx = high;
+    arr[pivotIdx].estado = 'minimo'; // El pivote se pinta azul
+    yield { arr: [...arr] };
+    
+    let i = low - 1;
+    for (let j = low; j < high; j++) {
+      arr[j].estado = 'comparando';
+      yield { arr: [...arr] };
+      
+      if (arr[j].valor < arr[pivotIdx].valor) {
+        i++;
+        let temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+        yield { arr: [...arr] };
+      }
+      arr[j].estado = 'default';
+    }
+    
+    // Colocar el pivote en su posición final
+    i++;
+    let temp = arr[i];
+    arr[i] = arr[pivotIdx];
+    arr[pivotIdx] = temp;
+    
+    arr[i].estado = 'ordenado'; // Este pivote ya encontró su lugar final
+    yield { arr: [...arr] };
+    return i;
+  }
+  
+  // Función recursiva interna. Usamos yield* para delegar el control
+  function* quickSortHelper(low, high) {
+    if (low < high) {
+      let pi = yield* particion(low, high);
+      yield* quickSortHelper(low, pi - 1);
+      yield* quickSortHelper(pi + 1, high);
+    } else if (low === high) {
+      arr[low].estado = 'ordenado';
+      yield { arr: [...arr] };
+    }
+  }
+  
+  yield* quickSortHelper(0, arr.length - 1);
+  
+  // Seguro final: forzar que todo se pinte como ordenado
+  arr.forEach(d => d.estado = 'ordenado');
   yield { arr: [...arr], finalizado: true };
 }
 
@@ -205,7 +282,22 @@ const iniciarOrdenamiento = () => {
   estaPausado.value = false; // Resetear botón
   iniciarCronometro();
 
-  algoritmoPausado = selectionSortGenerador(datos);
+  // Enrutar dependiendo de lo que el usuario seleccionó en la interfaz
+  switch (algoritmoSeleccionado.value) {
+    case 'bubble':
+      algoritmoPausado = bubbleSortGenerador(datos);
+      break;
+    case 'insertion':
+      algoritmoPausado = insertionSortGenerador(datos);
+      break;
+    case 'quicksort':
+      algoritmoPausado = quickSortGenerador(datos);
+      break;
+    case 'selection':
+    default:
+      algoritmoPausado = selectionSortGenerador(datos);
+      break;
+  }
   reproducirSiguientePaso();
 };
 
@@ -333,19 +425,28 @@ const reiniciarOrdenamiento = () => {
 
     </section>
 
-    <section class="fondo-gradiente w-full py-7" aria-labelledby="titulo-resultado">
-        <h2 id="titulo-resultado" class="text-center text-white lexend text-subtitle">
-            Resultado del ordenamiento
-        </h2>
-        <div class="max-w-4xl my-4 mx-auto bg-[#1e1e20] border-2 border-[#000000] rounded-3xl p-6 sm:p-8 text-white shadow-2xl space-y-6">
-            <figure ref="contenedorGrafico" class="grafico">
-                <!-- gráfico dinámico -->
-            </figure>
-            <time class="timer bg-[#FFE77A] text-black lexend px-6 py-2 rounded-xl text-button">
-                {{ tiempoFormateado }}
-            </time>
-        </div>
-    </section>
+    <section class="fondo-gradiente w-full py-7 px-4" aria-labelledby="titulo-resultado">
+    <h2 id="titulo-resultado" class="text-center text-white lexend text-subtitle mb-4">
+      Resultado del ordenamiento
+    </h2>
+
+    <!-- Cambio principal: p-3 en móviles, p-8 en desktop, y flexbox para la estructura -->
+    <div
+      class="max-w-4xl mx-auto bg-[#1e1e20] border-2 border-[#000000] rounded-3xl p-3 sm:p-8 text-white shadow-2xl flex flex-col gap-4 sm:gap-6">
+
+      <!-- Contenedor del gráfico garantizando ancho total -->
+      <figure ref="contenedorGrafico" class="grafico w-full flex items-center justify-center">
+        <!-- gráfico dinámico -->
+      </figure>
+
+      <!-- Contenedor para alinear el cronómetro a la izquierda sin margen extra -->
+      <div class="flex justify-start px-2 sm:px-0">
+        <time class="timer bg-[#FFE77A] text-black lexend px-6 py-2 rounded-xl text-button">
+          {{ tiempoFormateado }}
+        </time>
+      </div>
+    </div>
+  </section>
 </template>
 
 <style>
