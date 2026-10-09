@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import * as d3 from 'd3';
 
+
 // Referencias de la interfaz
 const valoresInput = ref("26, 87, 30, 19, 63, 83, 27, 88, 81, 26, 79, 75, 76, 84, 36");
 const algoritmoSeleccionado = ref("bubble");
@@ -336,6 +337,7 @@ const reiniciarOrdenamiento = () => {
   // 5. Redibujar el gráfico en su estado inicial
   parsearInputYRenderizar();
 };
+
 </script>
 
 <template>
