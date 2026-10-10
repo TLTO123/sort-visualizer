@@ -1,27 +1,100 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import EstructuraVisualizador from '../components/EstructuraVisualizador.vue';
 
-// Variable que simula el llenado azul de la barra de velocidad
 const progresoVelocidad = ref(30); 
+const listaOriginal = ref([]);
+const estaEjecutando = ref(false);
+const estaPausado = ref(false);
+
+// Referencias a los 4 componentes hijos para EstructuraVisualizador y poderlos controlar desde Rendimiento
+const tarjetaBurbuja = ref(null);
+const tarjetaSeleccion = ref(null);
+const tarjetaInsercion = ref(null);
+const tarjetaQuicksort = ref(null);
+
+const velocidadMs = computed(() => 1010 - (progresoVelocidad.value * 10)); // Slider para la velocidad de simulación
+
+const generarLista = () => {
+  const valoresNuevos = [];
+  for (let i = 0; i < 15; i++) {
+    const numeroAleatorio = Math.floor(Math.random() * 90) + 10;
+    valoresNuevos.push({ id: crypto.randomUUID(), valor: numeroAleatorio, estado: 'default' }); // crypyo.randomUUID es para identificar cada barra
+  }   // Correctamente con D3, el valor es el nímero aleatorio generado para cada valor, el estado es para operar con la barra durante el ordenamiento
+  listaOriginal.value = valoresNuevos; // Asigna los nuevos valores aleatorios al arreglo reactivo de vue para actualizar en tiempo real
+  estaEjecutando.value = false;
+  estaPausado.value = false;
+
+  // Reiniciar cronómetros de todas las tarjetas al generar nueva lista
+  tarjetaBurbuja.value?.reiniciarCronometro();
+  tarjetaSeleccion.value?.reiniciarCronometro();
+  tarjetaInsercion.value?.reiniciarCronometro();
+  tarjetaQuicksort.value?.reiniciarCronometro();
+};
+
+const iniciarSimulacion = () => {
+  if (listaOriginal.value.length === 0) {
+    alert("Primero genera una lista aleatoria.");
+    return;
+  }
+  estaEjecutando.value = true;
+  estaPausado.value = false;
+
+  // Disparar los cronómetros de todas las tarjetas al mismo tiempo
+  tarjetaBurbuja.value?.iniciarCronometro();
+  tarjetaSeleccion.value?.iniciarCronometro();
+  tarjetaInsercion.value?.iniciarCronometro();
+  tarjetaQuicksort.value?.iniciarCronometro();  
+};
+
+const pausarSimulacion = () => {
+  if (!estaEjecutando.value) return;
+  estaPausado.value = !estaPausado.value; // ALterna entre True o False al identificador de estado pausado
+
+  if (estaPausado.value) {
+    tarjetaBurbuja.value?.detenerCronometro();
+    tarjetaSeleccion.value?.detenerCronometro();
+    tarjetaInsercion.value?.detenerCronometro();
+    tarjetaQuicksort.value?.detenerCronometro();
+  } else {
+    tarjetaBurbuja.value?.iniciarCronometro();
+    tarjetaSeleccion.value?.iniciarCronometro();
+    tarjetaInsercion.value?.iniciarCronometro();
+    tarjetaQuicksort.value?.iniciarCronometro();
+  }
+};
+
+const reiniciarSimulacion = () => {
+  estaEjecutando.value = false;
+  estaPausado.value = false;
+
+  tarjetaBurbuja.value?.reiniciarCronometro();
+  tarjetaSeleccion.value?.reiniciarCronometro();
+  tarjetaInsercion.value?.reiniciarCronometro();
+  tarjetaQuicksort.value?.reiniciarCronometro();
+
+  // Opcional: regenerar o limpiar la lista base
+  generarLista();
+};
 </script>
 
 <template>
   <div class="contenedor">
     <header class="cabecera">
-      <h2 class="subtitulo">Prueba de rendimiento   (Demostración simultánea)</h2>
+      <h2 class="subtitulo">Prueba de rendimiento (Demostración simultánea)</h2>
       <p class="descripcion">
-        Compara el rendimiento de los diferentes algoritmos de ordenamiento mediante una simulación interactiva. 
-        Genera un conjunto de datos, ajusta la velocidad de ejecución y observa el tiempo que tarda cada método 
-        en completar el proceso.
+        Compara el rendimiento de los diferentes algoritmos de ordenamiento mediante una simulación interactiva.
       </p>
     </header>
 
     <section class="controles-rendimiento">
       <div class="botones">
-        <button class="btn">Generar nueva lista aleatoria</button>
-        <button class="btn">Iniciar</button>
-        <button class="btn">Pausar</button>
-        <button class="btn">Reiniciar</button>
+        <button class="btn" @click="generarLista">Generar nueva lista aleatoria</button>
+        <button class="btn" @click="iniciarSimulacion" :disabled="estaEjecutando && !estaPausado">Iniciar</button>
+        <button class="btn" @click="pausarSimulacion" :disabled="!estaEjecutando">
+          {{ estaPausado ? 'Reanudar' : 'Pausar' }} <!-- Alterna el label del botón dependiendo si está pausado o no-->
+        </button>
+        <button class="btn" @click="reiniciarSimulacion">Reiniciar</button>
       </div>
       
       <div class="rango-velocidad">
@@ -37,30 +110,11 @@ const progresoVelocidad = ref(30);
     </section>
 
     <section class="resultados-grid">
-      <article class="tarjeta-algoritmo">
-        <h3>Burbuja (Bidireccional)</h3>
-        <figure class="grafico"></figure>
-        <time class="cronometro">00:00:00</time>
-      </article>
-
-      <article class="tarjeta-algoritmo">
-        <h3>Ordenamiento por Selección</h3>
-        <figure class="grafico"></figure>
-        <time class="cronometro">00:00:00</time>
-      </article>
-
-      <article class="tarjeta-algoritmo">
-        <h3>Ordenamiento por Inserción</h3>
-        <figure class="grafico"></figure>
-        <time class="cronometro">00:00:00</time>
-      </article>
-
-      <article class="tarjeta-algoritmo">
-        <h3>Quicksort (Ordenamiento rápido)</h3>
-        <figure class="grafico"></figure>
-        <time class="cronometro">00:00:00</time>
-      </article>
-    </section>
+      <EstructuraVisualizador ref="tarjetaBurbuja" titulo="Burbuja (bidireccional)" :datos="listaOriginal" />
+      <EstructuraVisualizador ref="tarjetaSeleccion" titulo="Ordenamiento por selección" :datos="listaOriginal" />
+      <EstructuraVisualizador ref="tarjetaInsercion" titulo="Ordenamiento por inserción" :datos="listaOriginal" />
+      <EstructuraVisualizador ref="tarjetaQuicksort" titulo="Quicksort (ordenamiento rápido)" :datos="listaOriginal" />
+    </section>    
   </div>
 </template>
 
@@ -164,33 +218,6 @@ input[type=range]::-webkit-slider-thumb {
   margin: 0 auto;
 }
 
-.tarjeta-algoritmo {
-  background-color: #272727;
-  border: 1px solid #333333;
-  border-radius: 12px;
-  padding: 1.5rem 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.tarjeta-algoritmo h3 {
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.grafico {
-  width: 100%;
-  height: 120px;
-  border-bottom: 1px solid #555;
-  margin: 0 0 1.5rem 0;
-}
-
-.cronometro {
-  padding: 0.4rem 1.2rem;
-  font-family: monospace;
-  font-size: 1rem;
-}
 
 /* Media Queries */
 /* TABLET */
