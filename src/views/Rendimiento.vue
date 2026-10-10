@@ -1,28 +1,8 @@
 <script setup>
 import { ref } from 'vue';
-import EstructuraVisualizador from '../components/EstructuraVisualizador.vue';
 
 // Variable que simula el llenado azul de la barra de velocidad
 const progresoVelocidad = ref(30); 
-
-// Variable para almacenar los valores a ordenar inicialmente vacía 
-const listaOriginal = ref([]);
-// Función para generar números aleatorios
-const generarLista = () => {
-  const nuevaLista = [];
-  const cantidadDeBarras = 25; // Cantidad de elementos a ordenar
-
-  for (let i = 0; i < cantidadDeBarras; i++) {
-    // Genera un número aleatorio entero entre 10 y 99
-    const numeroAleatorio = Math.floor(Math.random() * 90) + 10;
-    nuevaLista.push(numeroAleatorio);
-  }
-
-  // Guardamos la nueva lista en nuestra variable reactiva
-  listaOriginal.value = nuevaLista;
-  console.log("Lista generada:", listaOriginal.value); // Puedes abrir la consola del navegador (F12) para verla
-};
-
 </script>
 
 <template>
@@ -38,7 +18,7 @@ const generarLista = () => {
 
     <section class="controles-rendimiento">
       <div class="botones">
-        <button class="btn" @click ="generarLista">Generar nueva lista aleatoria</button>
+        <button class="btn">Generar nueva lista aleatoria</button>
         <button class="btn">Iniciar</button>
         <button class="btn">Pausar</button>
         <button class="btn">Reiniciar</button>
@@ -55,12 +35,32 @@ const generarLista = () => {
           :style="{ background: `linear-gradient(to right, #1F3B8A ${progresoVelocidad}%, #484848 ${progresoVelocidad}%)` }">
       </div>
     </section>
+
     <section class="resultados-grid">
-      <EstructuraVisualizador titulo="Burbuja (bidireccional)" :datos="listaOriginal"/>
-      <EstructuraVisualizador titulo="Ordenamiento por selección" :datos="listaOriginal"/>
-      <EstructuraVisualizador titulo="Ordenamiento por inserción" :datos="listaOriginal"/>
-      <EstructuraVisualizador titulo="Quicksort (ordenamiento rápido)" :datos="listaOriginal"/>
-    </section>  
+      <article class="tarjeta-algoritmo">
+        <h3>Burbuja (Bidireccional)</h3>
+        <figure class="grafico"></figure>
+        <time class="cronometro">00:00:00</time>
+      </article>
+
+      <article class="tarjeta-algoritmo">
+        <h3>Ordenamiento por Selección</h3>
+        <figure class="grafico"></figure>
+        <time class="cronometro">00:00:00</time>
+      </article>
+
+      <article class="tarjeta-algoritmo">
+        <h3>Ordenamiento por Inserción</h3>
+        <figure class="grafico"></figure>
+        <time class="cronometro">00:00:00</time>
+      </article>
+
+      <article class="tarjeta-algoritmo">
+        <h3>Quicksort (Ordenamiento rápido)</h3>
+        <figure class="grafico"></figure>
+        <time class="cronometro">00:00:00</time>
+      </article>
+    </section>
   </div>
 </template>
 
@@ -162,6 +162,34 @@ input[type=range]::-webkit-slider-thumb {
   gap: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.tarjeta-algoritmo {
+  background-color: #272727;
+  border: 1px solid #333333;
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tarjeta-algoritmo h3 {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.grafico {
+  width: 100%;
+  height: 120px;
+  border-bottom: 1px solid #555;
+  margin: 0 0 1.5rem 0;
+}
+
+.cronometro {
+  padding: 0.4rem 1.2rem;
+  font-family: monospace;
+  font-size: 1rem;
 }
 
 /* Media Queries */
