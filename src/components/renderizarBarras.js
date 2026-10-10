@@ -1,6 +1,15 @@
 // ../components/renderizarBarras.js
 import * as d3 from 'd3';
 
+// Selector de colores basado en el estado
+const obtenerColor = (estado) => {
+  if (estado === 'comparando') return '#FFB3BA'; // Rosa claro
+  if (estado === 'minimo') return '#7DD3FC';     // Azul claro
+  if (estado === 'ordenado') return '#FCE67E';   // amarillo claro para cuando ya este ordenado
+  return '#4B5563'; // Gris oscuro base (default)
+};
+
+
 export function renderizarBarras(datos, velocidadMs = 0, selectorContenedor) {
     if (!datos || datos.length === 0) {
         console.warn("renderizarBarras: El arreglo de datos está vacío.");
@@ -71,5 +80,5 @@ export function renderizarBarras(datos, velocidadMs = 0, selectorContenedor) {
         // Math.max asegura que la altura de la barra nunca sea un número negativo o cero absoluto
         .attr("height", d => Math.max(2, (alto - margen) - escalaY(d.valor)))
         // Forzamos un color naranja/amarillo brillante temporal para verlas sobre tu fondo oscuro #1E1E1E
-        .attr("fill", "#FCE67E"); 
+        .attr("fill",  d => obtenerColor(d.estado)); 
 }
