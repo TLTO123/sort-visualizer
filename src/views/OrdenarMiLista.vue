@@ -124,6 +124,45 @@ function renderizarBarras(arreglo, duracion = 0) {
 }
 
 // Funciones que ejecutan los métodos de ordenamiento
+// --- MÉTODO BURBUJA (BUBBLE SORT) ---
+function* bubbleSortGenerador(arreglo) {
+  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
+  let n = arr.length;
+
+  for (let i = 0; i < n - 1; i++) {
+    let huboIntercambio = false;
+
+    for (let j = 0; j < n - i - 1; j++) {
+      // Marcar los elementos que se están comparando
+      arr[j].estado = 'comparando';
+      arr[j + 1].estado = 'comparando';
+      yield { arr: [...arr] };
+
+      if (arr[j].valor > arr[j + 1].valor) {
+        // Intercambiar elementos
+        let temp = arr[j];
+        arr[j] = arr[j + 1];
+        arr[j + 1] = temp;
+        huboIntercambio = true;
+        yield { arr: [...arr] };
+      }
+
+      // Regresar al estado por defecto los que se compararon
+      arr[j].estado = 'default';
+      arr[j + 1].estado = 'default';
+    }
+
+    // Marcar el elemento ya ordenado al final del recorrido
+    arr[n - 1 - i].estado = 'ordenado';
+
+    if (!huboIntercambio) break; // Optimización si ya está ordenado
+  }
+
+  // Asegurar que todos queden marcados como ordenados al final
+  arr.forEach(d => d.estado = 'ordenado');
+  yield { arr: [...arr], finalizado: true };
+}
+
 // --- MÉTODO SELECCIÓN (SELECTION SORT) ---
 function* selectionSortGenerador(arreglo) {
   let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
@@ -160,7 +199,43 @@ function* selectionSortGenerador(arreglo) {
   yield { arr: [...arr], finalizado: true };
 }
 
-// --- MÉTODO QUICKSORT ---
+// --- MÉTODO INSERCIÓN (INSERTION SORT) ---
+function* insertionSortGenerador(arreglo) {
+  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
+  let n = arr.length;
+
+  for (let i = 1; i < n; i++) {
+    let key = arr[i];
+    let j = i - 1;
+
+    // Resaltar el elemento que se va a insertar
+    key.estado = 'minimo';
+    yield { arr: [...arr] };
+
+    while (j >= 0 && arr[j].valor > key.valor) {
+      arr[j + 1].estado = 'comparando';
+      yield { arr: [...arr] };
+
+      arr[j + 1] = arr[j];
+      j = j - 1;
+      yield { arr: [...arr] };
+    }
+
+    arr[j + 1] = key;
+
+    // Marcar progresivamente los elementos ya recorridos como ordenados hasta la posición i
+    for (let k = 0; k <= i; k++) {
+      arr[k].estado = 'ordenado';
+    }
+    yield { arr: [...arr] };
+  }
+
+  // Marcar todos como ordenados al finalizar
+  arr.forEach(d => d.estado = 'ordenado');
+  yield { arr: [...arr], finalizado: true };
+}
+
+// --- MÉTODO QUICKSORT (QUICK SORT) ---
 function* quickSortGenerador(arreglo) {
   let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
 
