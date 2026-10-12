@@ -41,7 +41,25 @@
 }
 }
 
+.contenedor-principal{
+    background-color: #121212;
+}
+
 .lexend{
     font-family: 'Lexend';
     font-weight: 600;
+}
+
+.mono{
+    font-family: 'Atkinson Hyperlegible Mono';
+    font-weight: 600;
+}
+
+.fondo-gradiente {
+  /* El gradiente lineal */
+    background-image: linear-gradient(
+    to top, 
+    #1E1E1E 15%, 
+    rgba(30, 30, 30, 0.5) 73%
+    );
 }

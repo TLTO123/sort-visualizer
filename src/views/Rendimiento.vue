@@ -1,124 +1,517 @@
 <script setup>
-import { ref, computed } from 'vue';
-import EstructuraVisualizador from '../components/EstructuraVisualizador.vue';
+import { ref, onMounted, watch, computed } from 'vue';
+import { renderizarBarras } from '../components/renderizarBarras.js';
+import * as d3 from 'd3';
 
-const progresoVelocidad = ref(30); 
-const listaOriginal = ref([]);
-const estaEjecutando = ref(false);
+// Variable que simula el llenado azul de la barra de velocidad
 const estaPausado = ref(false);
+const velocidadSlider = ref(50);
+//var de estado
+let temporizadorAnimacion = null;
+// Lista reactiva que contendrá los números
+const listaNumeros = ref([]);
 
-// Referencias a los 4 componentes hijos para EstructuraVisualizador y poderlos controlar desde Rendimiento
-const tarjetaBurbuja = ref(null);
-const tarjetaSeleccion = ref(null);
-const tarjetaInsercion = ref(null);
-const tarjetaQuicksort = ref(null);
+// Lógica del Cronómetro
+const tiempoInicio = ref(0);
+const tiempoActual = ref(0);
+const tiempoPausadoAcumulado = ref(0);
+let timerId = null;
 
-const velocidadMs = computed(() => 1010 - (progresoVelocidad.value * 10)); // Slider para la velocidad de simulación
+// Objeto reactivo para llevar el tiempo independiente de cada algoritmo (en milisegundos)
+const tiemposAlgoritmos = ref({
+  '#grafico-bubble': 0,
+  '#grafico-selection': 0,
+  '#grafico-insertion': 0,
+  '#grafico-quicksort': 0
+});
 
-const generarLista = () => {
-  const valoresNuevos = [];
-  for (let i = 0; i < 15; i++) {
-    const numeroAleatorio = Math.floor(Math.random() * 90) + 10;
-    valoresNuevos.push({ id: crypto.randomUUID(), valor: numeroAleatorio, estado: 'default' }); // crypyo.randomUUID es para identificar cada barra
-  }   // Correctamente con D3, el valor es el nímero aleatorio generado para cada valor, el estado es para operar con la barra durante el ordenamiento
-  listaOriginal.value = valoresNuevos; // Asigna los nuevos valores aleatorios al arreglo reactivo de vue para actualizar en tiempo real
-  estaEjecutando.value = false;
-  estaPausado.value = false;
+// Marcas de tiempo de inicio para cada algoritmo
+const tiemposInicioAlgoritmos = {};
+// IDs de los intervalos o referencias de tiempo individuales
+const timersAlgoritmos = {};
 
-  // Reiniciar cronómetros de todas las tarjetas al generar nueva lista
-  tarjetaBurbuja.value?.reiniciarCronometro();
-  tarjetaSeleccion.value?.reiniciarCronometro();
-  tarjetaInsercion.value?.reiniciarCronometro();
-  tarjetaQuicksort.value?.reiniciarCronometro();
+//métood para formatear el tiempo en minutos, segundos y centésimas
+const formatearTiempo = (ms) => {
+  const minutos = String(Math.floor((ms / 60000) % 60)).padStart(2, '0');
+  const segundos = String(Math.floor((ms / 1000) % 60)).padStart(2, '0');
+  const centesimas = String(Math.floor((ms % 1000) / 10)).padStart(2, '0');
+  return `${minutos}:${segundos}:${centesimas}`;
+};
+// Creamos un array con los selectores para automatizar la creación
+const selectores = ['#grafico-bubble', '#grafico-selection', '#grafico-quicksort', '#grafico-insertion'];
+const configSVG = { alto: 250, margen: 15 };
+
+const algoritmosActivos = {};
+const temporizadoresAnimacion = {};
+// Propiedad computada para traducir el valor del slider en milisegundos reales de espera
+const velocidadMs = computed(() => 1010 - (velocidadSlider.value * 10));
+
+
+// Función segura que actualiza las 4 gráficas en pantalla
+const actualizarTodasLasGraficas = (velocidadAnimacion = 0) => {
+  selectores.forEach(selector => {
+    try {
+      renderizarBarras(listaNumeros.value, velocidadAnimacion, selector);
+    } catch (error) {
+      console.error(`Error al renderizar en el contenedor ${selector}:`, error);
+    }
+  });
 };
 
-const iniciarSimulacion = () => {
-  if (listaOriginal.value.length === 0) {
-    alert("Primero genera una lista aleatoria.");
+const detenerCronometro = () => {
+  if (timerId) {
+    clearInterval(timerId);
+    timerId = null;
+    tiempoPausadoAcumulado.value = tiempoActual.value - tiempoInicio.value;
+  }
+};
+
+const iniciarCronometro = () => {
+  if (!timerId) {
+    tiempoInicio.value = Date.now() - tiempoPausadoAcumulado.value;
+    timerId = setInterval(() => {
+      tiempoActual.value = Date.now();
+    }, 10);
+  }
+};
+
+/**
+ * Mueve un paso hacia adelante el algoritmo vinculado al ID correspondiente
+ * @param {String} selector - El ID exacto del contenedor (ej: '#grafico-selection')
+ */
+const reproducirSiguientePaso = (selector) => {
+  const generador = algoritmosActivos[selector];
+  if (!generador) return;
+
+  // Ejecutamos la siguiente iteración del generador
+  const paso = generador.next();
+
+  // Si el generador finalizó el ordenamiento
+  if (paso.done || (paso.value && paso.value.finalizado)) {
+    algoritmosActivos[selector] = null;
+
+    // Detener el cronómetro individual de este selector
+    if (timersAlgoritmos[selector]) {
+      clearInterval(timersAlgoritmos[selector]);
+      timersAlgoritmos[selector] = null;
+    }
+    if (paso.value) {
+      renderizarBarras(paso.value.arr, velocidadMs.value, selector);
+    }
     return;
   }
-  estaEjecutando.value = true;
-  estaPausado.value = false;
 
-  // Disparar los cronómetros de todas las tarjetas al mismo tiempo
-  tarjetaBurbuja.value?.iniciarCronometro();
-  tarjetaSeleccion.value?.iniciarCronometro();
-  tarjetaInsercion.value?.iniciarCronometro();
-  tarjetaQuicksort.value?.iniciarCronometro();  
+  // Renderizamos el paso actual en D3
+  renderizarBarras(paso.value.arr, velocidadMs.value, selector);
+
+  // Programamos el siguiente paso
+  temporizadoresAnimacion[selector] = setTimeout(() => {
+    reproducirSiguientePaso(selector);
+  }, velocidadMs.value + 20);
 };
 
-const pausarSimulacion = () => {
-  if (!estaEjecutando.value) return;
-  estaPausado.value = !estaPausado.value; // ALterna entre True o False al identificador de estado pausado
+/**
+ * MÉTODO ORQUESTADOR SIMULTÁNEO
+ * Inicializa los 4 algoritmos en paralelo usando la misma lista de partida original
+ */
+const iniciarTodosLosOrdenamientos = () => {
+  // Limpieza preventiva de animaciones previas en ejecución
+  selectores.forEach(selector => {
+    if (temporizadoresAnimacion[selector]) clearTimeout(temporizadoresAnimacion[selector]);
+    if (timersAlgoritmos[selector]) clearInterval(timersAlgoritmos[selector]);
+    tiemposAlgoritmos.value[selector] = 0; // Resetear tiempo visual
+  });
+  if (!listaNumeros.value || listaNumeros.value.length === 0) return;
 
-  if (estaPausado.value) {
-    tarjetaBurbuja.value?.detenerCronometro();
-    tarjetaSeleccion.value?.detenerCronometro();
-    tarjetaInsercion.value?.detenerCronometro();
-    tarjetaQuicksort.value?.detenerCronometro();
-  } else {
-    tarjetaBurbuja.value?.iniciarCronometro();
-    tarjetaSeleccion.value?.iniciarCronometro();
-    tarjetaInsercion.value?.iniciarCronometro();
-    tarjetaQuicksort.value?.iniciarCronometro();
+  //Encender el cronómetro general
+  tiempoPausadoAcumulado.value = 0;
+  tiempoActual.value = 0;
+  estaPausado.value = false;
+  iniciarCronometro();
+
+  //Configuración de los 4 algoritmos simultáneos
+  const configuracionSimulacion = [
+    { selector: '#grafico-bubble', generadorFn: bubbleSortGenerador },
+    { selector: '#grafico-selection', generadorFn: selectionSortGenerador },
+    { selector: '#grafico-insertion', generadorFn: insertionSortGenerador },
+    { selector: '#grafico-quicksort', generadorFn: quickSortGenerador }
+  ];
+
+  //Disparar los 4 hilos de animación en paralelo
+  configuracionSimulacion.forEach(sim => {
+    const copiaDatosUnica = JSON.parse(JSON.stringify(listaNumeros.value));
+
+    // Instanciar el generador
+    algoritmosActivos[sim.selector] = sim.generadorFn(copiaDatosUnica);
+
+    // Renderizado inmediato del estado base limpio antes del primer paso
+    renderizarBarras(copiaDatosUnica, 0, sim.selector);
+    // Iniciar cronómetro individual para este selector
+    const inicioAlgoritmo = Date.now();
+    timersAlgoritmos[sim.selector] = setInterval(() => {
+      tiemposAlgoritmos.value[sim.selector] = Date.now() - inicioAlgoritmo;
+    }, 10);
+    // Iniciar bucle visual para este ID tras un breve respiro
+    setTimeout(() => {
+      reproducirSiguientePaso(sim.selector);
+    }, 50);
+  });
+};
+
+/**
+ * Inicializa el ordenamiento enfocado en un ID de contenedor gráfico específico
+ * @param {String} selector - El ID exacto del contenedor (ej: '#grafico-selection')
+ */
+const iniciarOrdenamientoPorId = (selector) => {
+  // Si ya había una animación activa en este ID, la limpiamos para evitar duplicados acelerados
+  if (temporizadoresAnimacion[selector]) {
+    clearTimeout(temporizadoresAnimacion[selector]);
   }
-};
 
-const reiniciarSimulacion = () => {
-  estaEjecutando.value = false;
+  tiempoPausadoAcumulado.value = 0;
+  tiempoActual.value = 0;
   estaPausado.value = false;
+  iniciarCronometro();
 
-  tarjetaBurbuja.value?.reiniciarCronometro();
-  tarjetaSeleccion.value?.reiniciarCronometro();
-  tarjetaInsercion.value?.reiniciarCronometro();
-  tarjetaQuicksort.value?.reiniciarCronometro();
+  //Clonación profunda: Creamos una copia exacta del arreglo para que este ID trabaje de forma aislada
+  const copiaDatos = JSON.parse(JSON.stringify(listaNumeros.value));
 
-  // Opcional: regenerar o limpiar la lista base
-  generarLista();
+  // Mapeo dinámico según el selector que mandes a llamar
+  const generadoresPorId = {
+    '#grafico-bubble': bubbleSortGenerador,
+    '#grafico-selection': selectionSortGenerador,
+    '#grafico-insertion': insertionSortGenerador,
+    '#grafico-quicksort': quickSortGenerador
+  };
+
+  const funcionGeneradora = generadoresPorId[selector] || selectionSortGenerador;
+  algoritmosActivos[selector] = funcionGeneradora(copiaDatos);
+
+  reproducirSiguientePaso(selector);
 };
+
+// Controladores
+const parsearInputYRenderizar = () => {
+  let valores = listaNumeros.value.map(d => d.valor);
+  listaNumeros.value = valores.map(v => ({ id: crypto.randomUUID(), valor: v, estado: 'default' }));
+  renderizarBarras(listaNumeros.value, 0);
+};
+
+function* selectionSortGenerador(arreglo) {
+  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
+  let n = arr.length;
+
+  for (let i = 0; i < n - 1; i++) {
+    let minIdx = i;
+    arr[minIdx].estado = 'minimo';
+    yield { arr: [...arr] }; // Renderiza el azul
+
+    for (let j = i + 1; j < n; j++) {
+      arr[j].estado = 'comparando';
+      yield { arr: [...arr] }; // Renderiza el rosa temporalmente
+
+      if (arr[j].valor < arr[minIdx].valor) {
+        arr[minIdx].estado = 'default';
+        minIdx = j;
+        arr[minIdx].estado = 'minimo'; // Nuevo azul
+        yield { arr: [...arr] };
+      } else {
+        arr[j].estado = 'default';
+      }
+    }
+
+    if (minIdx !== i) {
+      let temp = arr[i];
+      arr[i] = arr[minIdx];
+      arr[minIdx] = temp;
+      yield { arr: [...arr] }; // Anima el intercambio
+    }
+    arr[i].estado = 'ordenado';
+  }
+  arr[n - 1].estado = 'ordenado';
+  yield { arr: [...arr], finalizado: true };
+}
+
+function* quickSortGenerador(arreglo) {
+  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
+
+  function* partition(low, high) {
+    let pivot = arr[high];
+    pivot.estado = 'minimo';
+    let i = low - 1;
+
+    for (let j = low; j <= high - 1; j++) {
+      arr[j].estado = 'comparando';
+      yield { arr: [...arr] };
+
+      if (arr[j].valor < pivot.valor) {
+        i++;
+        let temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+        yield { arr: [...arr] };
+      }
+      arr[j].estado = 'default';
+    }
+
+    let temp = arr[i + 1];
+    arr[i + 1] = arr[high];
+    arr[high] = temp;
+    pivot.estado = 'default';
+    yield { arr: [...arr] };
+
+    return i + 1;
+  }
+
+  function* quickSortHelper(low, high) {
+    if (low < high) {
+      let piGen = partition(low, high);
+      let pi = piGen.next();
+      while (!pi.done) {
+        yield pi.value;
+        pi = piGen.next();
+      }
+      let piIndex = pi.value;
+
+      let leftGen = quickSortHelper(low, piIndex - 1);
+      for (let gen of leftGen) yield gen;
+
+      let rightGen = quickSortHelper(piIndex + 1, high);
+      for (let gen of rightGen) yield gen;
+    } else if (low >= 0 && high >= 0 && low < arr.length && high < arr.length) {
+      arr[low].estado = 'ordenado';
+    }
+  }
+
+  let sortGen = quickSortHelper(0, arr.length - 1);
+  for (let gen of sortGen) yield gen;
+
+  // Marcar todos como ordenados al finalizar
+  arr.forEach(d => d.estado = 'ordenado');
+  yield { arr: [...arr], finalizado: true };
+}
+
+/**
+ * Generador para Bubble Sort (Burbuja)
+ */
+function* bubbleSortGenerador(arreglo) {
+  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
+  let n = arr.length;
+
+  for (let i = 0; i < n - 1; i++) {
+    let huboIntercambio = false;
+
+    for (let j = 0; j < n - i - 1; j++) {
+      // Marcar los elementos que se están comparando
+      arr[j].estado = 'comparando';
+      arr[j + 1].estado = 'comparando';
+      yield { arr: [...arr] };
+
+      if (arr[j].valor > arr[j + 1].valor) {
+        // Intercambiar elementos
+        let temp = arr[j];
+        arr[j] = arr[j + 1];
+        arr[j + 1] = temp;
+        huboIntercambio = true;
+        yield { arr: [...arr] };
+      }
+
+      // Regresar al estado por defecto los que se compararon
+      arr[j].estado = 'default';
+      arr[j + 1].estado = 'default';
+    }
+
+    // Marcar el elemento ya ordenado al final del recorrido
+    arr[n - 1 - i].estado = 'ordenado';
+
+    if (!huboIntercambio) break; // Optimización si ya está ordenado
+  }
+
+  // Asegurar que todos queden marcados como ordenados al final
+  arr.forEach(d => d.estado = 'ordenado');
+  yield { arr: [...arr], finalizado: true };
+}
+
+
+/**
+ * Generador para Insertion Sort (Inserción)
+ */
+function* insertionSortGenerador(arreglo) {
+  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
+  let n = arr.length;
+
+  for (let i = 1; i < n; i++) {
+    let key = arr[i];
+    let j = i - 1;
+
+    // Resaltar el elemento que se va a insertar
+    key.estado = 'minimo';
+    yield { arr: [...arr] };
+
+    while (j >= 0 && arr[j].valor > key.valor) {
+      arr[j + 1].estado = 'comparando';
+      yield { arr: [...arr] };
+
+      arr[j + 1] = arr[j];
+      j = j - 1;
+      yield { arr: [...arr] };
+    }
+
+    arr[j + 1] = key;
+
+    // Marcar progresivamente los elementos ya recorridos como ordenados hasta la posición i
+    for (let k = 0; k <= i; k++) {
+      arr[k].estado = 'ordenado';
+    }
+    yield { arr: [...arr] };
+  }
+
+  // Marcar todos como ordenados al finalizar
+  arr.forEach(d => d.estado = 'ordenado');
+  yield { arr: [...arr], finalizado: true };
+}
+
+const generarNuevaLista = () => {
+  // 1. Limpieza total de cualquier animación previa en los 4 paneles
+  selectores.forEach(selector => {
+    if (temporizadoresAnimacion[selector]) {
+      clearTimeout(temporizadoresAnimacion[selector]);
+      temporizadoresAnimacion[selector] = null;
+    }
+    algoritmosActivos[selector] = null;
+  });
+
+  // 2. Apagar y resetear el cronómetro general
+  detenerCronometro();
+  tiempoPausadoAcumulado.value = 0;
+  tiempoActual.value = 0;
+  estaPausado.value = false;
+  tiempoInicio.value = 0;
+
+  // 3. Generar la nueva lista con sus IDs correspondientes
+  const cantidadElementos = Math.floor(Math.random() * (40 - 10 + 1)) + 10;
+  const nuevoArreglo = [];
+
+  for (let i = 0; i < cantidadElementos; i++) {
+    const valorAleatorio = Math.floor(Math.random() * (100 - 10 + 1)) + 10;
+    nuevoArreglo.push({
+      id: crypto.randomUUID(),
+      valor: valorAleatorio,
+      estado: 'default'
+    });
+  }
+
+  // 4. Guardamos en la ref reactiva (al no haber watch, esto es 100% seguro y no causará bucles)
+  listaNumeros.value = nuevoArreglo;
+
+  // 5. Dibujar las barras iniciales en los 4 contenedores
+  actualizarTodasLasGraficas(300);
+};
+
+
+onMounted(() => {
+
+  // 1. Inicializamos los contenedores SVG en los 4 bloques
+  selectores.forEach(selector => {
+    const elemento = document.querySelector(selector);
+    if (!elemento) {
+      console.warn(`No se encontró el contenedor HTML para el selector: ${selector}`);
+      return;
+    }
+
+    const anchoReal = elemento.clientWidth || 400;
+
+    // Asegurar que no se dupliquen limpiando el HTML interno antes de inyectar
+    d3.select(selector).selectAll("svg").remove();
+
+    // Crea un SVG independiente dentro de cada uno de los 4 divs
+    d3.select(selector)
+      .append("svg")
+      .attr("width", anchoReal)
+      .attr("height", configSVG.alto);
+  });
+
+  // 2. Generamos la primera lista de números una vez que los SVGs ya existen
+  generarNuevaLista();
+
+  // 3. Escuchar el resize de la ventana de forma fluida
+  window.addEventListener('resize', () => {
+    selectores.forEach(selector => {
+      const elemento = document.querySelector(selector);
+      if (!elemento) return;
+
+      const nuevoAncho = elemento.clientWidth;
+      d3.select(selector).select("svg").attr("width", nuevoAncho);
+    });
+    actualizarTodasLasGraficas(0);
+  });
+});
 </script>
+
 
 <template>
   <div class="contenedor">
-    <header class="cabecera">
-      <h2 class="subtitulo">Prueba de rendimiento (Demostración simultánea)</h2>
-      <p class="descripcion">
-        Compara el rendimiento de los diferentes algoritmos de ordenamiento mediante una simulación interactiva.
+    <header class="cabecera lexend">
+      <h2 class="subtitulo text-title">Prueba de rendimiento (Demostración simultánea)</h2>
+      <p class="descripcion text-subtitle">
+        Compara el rendimiento de los diferentes algoritmos de ordenamiento mediante
+        una simulación interactiva.
+
+        <span class="bg-linear-to-r from-[#ED9C71] to-[#F9DC8A] bg-clip-text text-transparent">
+          Genera un conjunto de datos, ajusta la velocidad de
+        </span>
+
+        <span class="bg-linear-to-r from-[#3BA4B3] to-[#40D3E1] bg-clip-text text-transparent">
+          ejecución y observa el tiempo que tarda cada método en completar el proceso.
+        </span>
       </p>
     </header>
 
     <section class="controles-rendimiento">
-      <div class="botones">
-        <button class="btn" @click="generarLista">Generar nueva lista aleatoria</button>
-        <button class="btn" @click="iniciarSimulacion" :disabled="estaEjecutando && !estaPausado">Iniciar</button>
-        <button class="btn" @click="pausarSimulacion" :disabled="!estaEjecutando">
-          {{ estaPausado ? 'Reanudar' : 'Pausar' }} <!-- Alterna el label del botón dependiendo si está pausado o no-->
-        </button>
-        <button class="btn" @click="reiniciarSimulacion">Reiniciar</button>
+      <div class="botones lexend text-button">
+        <button class="btn" @click="generarNuevaLista">Generar nueva lista aleatoria</button>
+        <button class="btn" @click="iniciarTodosLosOrdenamientos">Iniciar</button>
+        <button class="btn" @click="pausarOrdenamiento">Pausar</button>
+        <button class="btn" @click="reiniciarOrdenamiento">Reiniciar</button>
       </div>
-      
+
       <div class="rango-velocidad">
-        <label for="velocidad">Velocidad</label>
-        <input 
-          type="range" 
-          id="velocidad" 
-          min="1" 
-          max="100" 
-          v-model="progresoVelocidad"
-          :style="{ background: `linear-gradient(to right, #1F3B8A ${progresoVelocidad}%, #484848 ${progresoVelocidad}%)` }">
+        <label for="velocidad" class="lexend text-button">Velocidad</label>
+        <input type="range" id="velocidad" min="1" max="100" v-model="velocidadSlider"
+          :style="{ background: `linear-gradient(to right, #1F3B8A ${velocidadSlider}%, #484848 ${velocidadSlider}%)` }">
       </div>
     </section>
 
     <section class="resultados-grid">
-      <EstructuraVisualizador ref="tarjetaBurbuja" titulo="Burbuja (bidireccional)" :datos="listaOriginal" />
-      <EstructuraVisualizador ref="tarjetaSeleccion" titulo="Ordenamiento por selección" :datos="listaOriginal" />
-      <EstructuraVisualizador ref="tarjetaInsercion" titulo="Ordenamiento por inserción" :datos="listaOriginal" />
-      <EstructuraVisualizador ref="tarjetaQuicksort" titulo="Quicksort (ordenamiento rápido)" :datos="listaOriginal" />
-    </section>    
+      <article class="tarjeta-algoritmo lexend">
+        <h3 class="text-subtitle">Burbuja (Bidireccional)</h3>
+        <div id="grafico-bubble" class="contenedor-svg"></div>
+        <time class="cronometro text-button">{{ formatearTiempo(tiemposAlgoritmos['#grafico-bubble']) }}</time>
+      </article>
+
+      <article class="tarjeta-algoritmo lexend">
+        <h3 class="text-subtitle">Ordenamiento por Selección</h3>
+        <div id="grafico-selection" class="contenedor-svg"></div>
+        <time class="cronometro text-button">{{ formatearTiempo(tiemposAlgoritmos['#grafico-selection']) }}</time>
+      </article>
+
+      <article class="tarjeta-algoritmo lexend">
+        <h3 class="text-subtitle">Ordenamiento por Inserción</h3>
+        <div id="grafico-insertion" class="contenedor-svg"></div>
+        <time class="cronometro text-button">{{ formatearTiempo(tiemposAlgoritmos['#grafico-insertion']) }}</time>
+      </article>
+
+      <article class="tarjeta-algoritmo lexend">
+        <h3 class="text-subtitle">Quicksort (Ordenamiento rápido)</h3>
+        <div id="grafico-quicksort" class="contenedor-svg"></div>
+        <time class="cronometro text-button">{{ formatearTiempo(tiemposAlgoritmos['#grafico-quicksort']) }}</time>
+      </article>
+    </section>
   </div>
 </template>
 
-<style scoped> /* scoped para que no afecte a los otros */
+<style scoped>
+/* scoped para que no afecte a los otros */
 .contenedor {
   background-color: #1E1E1E;
   color: #FFFFFF;
@@ -136,13 +529,10 @@ const reiniciarSimulacion = () => {
 }
 
 .subtitulo {
-  font-size: 1.2rem;
-  font-weight: bold;
   margin-bottom: 1.5rem;
 }
 
 .descripcion {
-  font-size: 0.9rem;
   line-height: 1.5;
 }
 
@@ -165,13 +555,12 @@ const reiniciarSimulacion = () => {
   gap: 1rem;
 }
 
-.btn, .cronometro {
+.btn,
+.cronometro {
   background-color: #FCE67E;
   color: #000000;
   border: none;
   border-radius: 10px;
-  font-weight: bold;
-  font-size: 0.85rem;
 }
 
 .btn {
@@ -190,7 +579,6 @@ const reiniciarSimulacion = () => {
   gap: 1rem;
   width: 100%;
   max-width: 400px;
-  font-size: 0.85rem;
 }
 
 input[type=range] {
@@ -218,6 +606,30 @@ input[type=range]::-webkit-slider-thumb {
   margin: 0 auto;
 }
 
+.tarjeta-algoritmo {
+  background-color: #272727;
+  border: 1px solid #333333;
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tarjeta-algoritmo h3 {
+  margin-bottom: 1.5rem;
+}
+
+.contenedor-svg {
+  width: 100%;
+  height: 250px;
+  border-bottom: 1px solid #555;
+  margin: 0 0 1.5rem 0;
+}
+
+.cronometro {
+  padding: 0.4rem 1.2rem;
+}
 
 /* Media Queries */
 /* TABLET */
@@ -233,7 +645,7 @@ input[type=range]::-webkit-slider-thumb {
     flex-direction: row;
     justify-content: space-between;
   }
-  
+
   .botones {
     flex-wrap: nowrap;
   }
