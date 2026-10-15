@@ -1,28 +1,31 @@
 <script setup>
-const desarrolladores = [
-  {
-    nombre: 'Alex Mauricio Alvarado Cantarero',
-    iniciales: 'AA'
-  },
-  {
-    nombre: 'Alex Gabriel Araujo Sol',
-    iniciales: 'AS'
-  },
-  {
-    nombre: 'Billy Seth Cañas Palacios',
-    iniciales: 'BC'
-  },
-  {
-    nombre: 'Cristian Fernando Mena Navarro',
-    iniciales: 'CM'
+import { ref, onMounted } from 'vue';
+import { obtenerEquipoCompleto } from '../services/github.js';
+
+const desarrolladores = ref(null);   // ← aquí vivirá el array combinado (JSON + GitHub)
+const cargando = ref(true);
+const error = ref(null);
+
+const cargarEquipo = async () => {
+  cargando.value = true;
+  error.value = null;
+  try {
+    desarrolladores.value = await obtenerEquipoCompleto();
+  } catch (e) {
+    error.value = e.message;         // falla solo si /api/equipo.json no carga
+  } finally {
+    cargando.value = false;
   }
-]
+};
+
+onMounted(cargarEquipo);
 </script>
 
 <template>
   <section class="desarrolladores">
     <!-- Presentación -->
     <div class="equipo-intro">
+      
       <h1 class="lexend text-title">Nuestro equipo</h1>
 
       <hr />
@@ -38,18 +41,35 @@ const desarrolladores = [
         A continuación, conoce a los integrantes que hicieron posible este
         proyecto.
       </p>
+
     </div>
 
+    <!-- Estados -->
+      <p v-if="cargando" class="mono text-body estado">
+        Cargando perfiles del equipo...
+      </p>
+
+      <p v-else-if="error" class="mono text-body estado">
+        No se pudo cargar el equipo.
+        <button class="btn-reintentar lexend" @click="cargarEquipo">Reintentar</button>
+      </p>
+
     <!-- Miembros -->
-    <div class="equipo-grid">
+    <div v-else class="equipo-grid">
       <article
         v-for="desarrollador in desarrolladores"
-        :key="desarrollador.nombre"
+        :key="desarrollador.id"
         class="desarrollador-card"
       >
         <div class="avatar">
-          <!-- Mientras no tengan fotografías usamos iniciales -->
-          <span class="lexend">{{ desarrollador.iniciales }}</span>
+          <!-- Si GitHub dio foto, se muestra; si no, cae a las iniciales -->
+          <img
+            v-if="desarrollador.avatar"
+            :src="desarrollador.avatar"
+            :alt="desarrollador.nombre"
+            class="avatar-foto"
+          />
+          <span v-else class="lexend">{{ desarrollador.iniciales }}</span>
         </div>
 
         <div class="informacion">
@@ -62,6 +82,8 @@ const desarrolladores = [
             en la construcción de una herramienta orientada al aprendizaje y
             visualización de algoritmos de ordenamiento.
           </p>
+
+          <p class="lexend text-body mt-2">Usuario de GitHub: {{ desarrollador.github }}</p>
         </div>
       </article>
     </div>
@@ -137,6 +159,13 @@ const desarrolladores = [
   color: #ffe77a;
   font-size: 1.5rem;
   font-weight: 600;
+}
+
+.avatar-foto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .informacion h2 {
