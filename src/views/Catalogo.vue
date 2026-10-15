@@ -1,38 +1,9 @@
 <script setup>
-const algoritmos = [
-  {
-    nombre: 'Burbuja (Bidireccional)',
-    dificultad: 'Media',
-    complejidad: 'O(n²)',
-    porcentaje: 55,
-    descripcion:
-      'Este algoritmo recorre la lista en ambas direcciones, comparando elementos adyacentes e intercambiándolos cuando se encuentran en el orden incorrecto. El proceso se repite hasta que la lista queda completamente ordenada.'
-  },
-  {
-    nombre: 'Ordenamiento por Selección',
-    dificultad: 'Media',
-    complejidad: 'O(n²)',
-    porcentaje: 55,
-    descripcion:
-      'Busca el elemento más pequeño dentro de la parte no ordenada de la lista y lo coloca en su posición correspondiente. Este procedimiento continúa hasta ordenar todos los elementos.'
-  },
-  {
-    nombre: 'Ordenamiento por Inserción',
-    dificultad: 'Baja',
-    complejidad: 'O(n²)',
-    porcentaje: 40,
-    descripcion:
-      'Construye la lista ordenada de manera progresiva. Cada elemento se toma y se inserta en la posición correcta dentro de la parte de la lista que ya se encuentra ordenada.'
-  },
-  {
-    nombre: 'Quicksort (Ordenamiento rápido)',
-    dificultad: 'Alta',
-    complejidad: 'O(n log n)',
-    porcentaje: 75,
-    descripcion:
-      'Divide la lista utilizando un elemento como pivote. Los valores menores se colocan a un lado y los mayores al otro, repitiendo el proceso hasta obtener la lista completamente ordenada.'
-  }
-]
+import { onMounted } from 'vue';
+import { useApi } from '../composables/useApi';
+
+const { datos, cargando, error, cargar } = useApi('algoritmos');
+onMounted(cargar);
 </script>
 
 <template>
@@ -58,9 +29,13 @@ const algoritmos = [
 
     <!-- Tarjetas -->
     <div class="algoritmos-grid">
+      <p v-if="cargando" class="mono text-body">Cargando algoritmos...</p>
+      <p v-else-if="error" class="mono text-body">
+        No se pudo cargar el contenido. <button @click="cargar">Reintentar</button>
+      </p>
       <article
-        v-for="algoritmo in algoritmos"
-        :key="algoritmo.nombre"
+        v-for="algoritmo in datos"
+        :key="algoritmo.id"
         class="algoritmo-card"
       >
         <div class="algoritmo-header">
@@ -105,7 +80,7 @@ const algoritmos = [
 
           <div class="dato complejidad lexend">
             <span>Complejidad</span>
-            <strong>{{ algoritmo.complejidad }}</strong>
+            <strong>Mejor: {{ algoritmo.complejidad.mejor }}, Promedio: {{ algoritmo.complejidad.promedio }}, Peor: {{ algoritmo.complejidad.peor }}</strong>
           </div>
         </div>
       </article>

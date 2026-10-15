@@ -10,7 +10,7 @@ const enviarCorreo = async () => {
     cargando.value = true;
 
     try {
-        // Asegúrate de reemplazar estos valores con tus credenciales reales de EmailJS
+        // Credenciales reales de EmailJS
         const resultado = await emailjs.sendForm(
             'service_gsawmym',   // Service ID
             'template_3jac87v',  // Template ID
@@ -53,7 +53,7 @@ const enviarCorreo = async () => {
                 <!-- Formulario conectado a EmailJS -->
                 <form ref="formRef" @submit.prevent="enviarCorreo" class="space-y-8">
 
-                    <!-- Opcional: Campo oculto para la variable {{title}} que vi en tu plantilla -->
+                    <!-- Opcional: Campo oculto para la variable {{title}} -->
                     <input type="hidden" name="title" value="Nuevo contacto desde SortVisualizer">
 
                     <!-- Campo nombre -->

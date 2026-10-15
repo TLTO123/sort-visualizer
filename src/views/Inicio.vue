@@ -1,10 +1,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useApi } from '../composables/useApi';
 import * as d3 from 'd3';
 
+const { datos, cargando, error, cargar } = useApi('contenido');
 const contenedorHero = ref(null);
 let intervaloAnimacion = null;
 
+onMounted(cargar);
 onMounted(() => {
     const ancho = contenedorHero.value.clientWidth || window.innerWidth * 0.9;
     const alto = 400;
@@ -94,31 +97,18 @@ onUnmounted(() => {
         <div class="charts">
             <div ref="contenedorHero" id="grafica-barra" class="mt-3 w-full opacity-60 pointer-events-none overflow-hidden mask-fade-out"></div>
         </div>
+        <p v-if="cargando" class="mono text-body">Cargando algoritmos...</p>
+        <p v-else-if="error" class="mono text-body">
+        No se pudo cargar el contenido. <button @click="cargar">Reintentar</button>
+        </p>
         <div class="cards pt-10 pb-10">
-            <div class="interactivo mb-10 p-5">
-                <h3 class="mb-2 lexend text-subtitle">Interactivo</h3>
-                <p class="pl-4 mono text-body">Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real
-                    de lento a rápido
-                    para no perderte ningún detalle. Experimenta de forma directa generando arreglos aleatorios o
-                    introduciendo
-                    tus propias listas personalizadas de datos.
-                </p>
-            </div>
-            <div class="educativo mb-10 p-5">
-                <h3 class="mb-2 lexend text-subtitle">Educativo</h3>
+            <div v-for="contenido in datos"
+        :key="contenido.id" class="metodos-ordenamiento mb-10 p-5">
+                <h3 class="mb-2 lexend text-subtitle">
+                    {{ contenido.titulo }}
+                </h3>
                 <p class="pl-4 mono text-body">
-                    Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real de lento a
-                    rápido para no perderte ningún detalle. Experimenta de forma directa generando arreglos aleatorios
-                    o introduciendo tus propias listas personalizadas de datos.
-                </p>
-            </div>
-            <div class="medicion-real mb-10 p-5">
-                <h3 class="mb-2 lexend text-subtitle">Medición Real</h3>
-                <p class="pl-4 mono text-body">
-                    Ve más allá de la teoría de la complejidad algorítmica analizando la eficiencia en un entorno
-                    práctico.
-                    La herramienta cuenta con cronómetros integrados de alta precisión que registran el tiempo de
-                    ejecución.
+                    {{ contenido.texto }}
                 </p>
             </div>
         </div>
@@ -167,9 +157,7 @@ onUnmounted(() => {
 .cards {
     flex-direction: column;
 
-    .educativo,
-    .interactivo,
-    .medicion-real {
+    .metodos-ordenamiento {
         background-color: #272727;
         border: #484848 solid 1px;
         border-radius: 15px;

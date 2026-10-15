@@ -1,0 +1,28 @@
+[{
+    "id": 1,
+    "nombre": "Alex Mauricio Alvarado Cantarero",
+    "iniciales": "AA",
+    "github": "TLTO123",
+    "descripcion": "Integrante del equipo de desarrollo de SortVisualizer, participando en la construcción de una herramienta orientada al aprendizaje y visualización de algoritmos de ordenamiento."
+},
+{
+    "id": 2,
+    "nombre": "Alex Gabriel Araujo Sol",
+    "iniciales": "AS",
+    "github": "aelx-dou",
+    "descripcion": "Integrante del equipo de desarrollo de SortVisualizer, participando en la construcción de una herramienta orientada al aprendizaje y visualización de algoritmos de ordenamiento."
+},
+{
+    "id": 3,
+    "nombre": "Billy Seth Cañas Palacios",
+    "iniciales": "BC",
+    "github": "billycanas",
+    "descripcion": "Integrante del equipo de desarrollo de SortVisualizer, participando en la construcción de una herramienta orientada al aprendizaje y visualización de algoritmos de ordenamiento."
+},
+{
+    "id": 4,
+    "nombre": "Cristian Fernando Mena Navarro",
+    "iniciales": "CM",
+    "github": "BerryBGoode",
+    "descripcion": "Integrante del equipo de desarrollo de SortVisualizer, participando en la construcción de una herramienta orientada al aprendizaje y visualización de algoritmos de ordenamiento."
+}]

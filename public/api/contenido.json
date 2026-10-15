@@ -1,0 +1,15 @@
+[{
+    "id": 1,
+    "titulo": "Interactivo",
+    "texto": "Toma el mando de la simulación ajustando la velocidad de las animaciones en tiempo real de lento a rápido para no perderte ningún detalle. Experimenta de forma directa generando arreglos aleatorios o introduciendo tus propias listas personalizadas de datos."
+},
+{
+    "id": 2,
+    "titulo": "Educativo",
+    "texto": "Diseñado para transformar conceptos teóricos abstractos en un aprendizaje visual e intuitivo. Comprende visualmente el flujo de comparaciones, intercambios y la complejidad de algoritmos."
+},
+{
+    "id": 3,
+    "titulo": "Medición",
+    "texto": "Ve más allá de la teoría de la complejidad algorítmica analizando la eficiencia en un entorno práctico. La herramienta cuenta con cronómetros integrados de alta precisión que registran el tiempo de ejecución."
+}]
