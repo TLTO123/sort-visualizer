@@ -1,6 +1,6 @@
 // ============================================================
 // ARCHIVO: services/github.js
-// RESPONSABLE: integración con la API REST pública de GitHub (Criterio 1)
+// RESPONSABLE: integración con la API REST pública de GitHub
 // QUÉ HACE: descarga perfiles de usuario y los FUSIONA con equipo.json
 // RIESGO CONOCIDO: sin token, GitHub permite 60 peticiones/hora por IP;
 //                  por eso existe la caché con TTL de 1 hora.
