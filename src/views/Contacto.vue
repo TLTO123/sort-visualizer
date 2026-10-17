@@ -44,7 +44,7 @@ const enviarCorreo = async () => {
 </script>
 
 <template>
-    <div class="container-main">
+    <div class="container-main min-h-screen flex flex-col">
         <div class="intro">
             <h1 class="text-title mb-2 lexend">Comprende los algoritmos de ordenamiento visualmente</h1>
             <hr />
@@ -55,7 +55,7 @@ const enviarCorreo = async () => {
                 experiencia de todos los usuarios.
             </h1>
         </div>
-        <div class="fondo-gradiente w-full py-6 px-4">
+        <div class="fondo-gradiente w-full grow py-6 px-4">
             <!-- Tarjeta contenedora -->
             <div
                 class="max-w-4xl mx-auto bg-[#1e1e20] border-2 border-black rounded-3xl p-8 sm:p-10 text-white shadow-2xl">

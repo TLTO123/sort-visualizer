@@ -24,8 +24,8 @@ onMounted(() => {
 
     const cantidadBarras = Math.floor(ancho / 30);
     // Ojo: este 'datos' es local y "tapa" al 'datos' del composable (línea 15);
-  // aquí solo se usa para la animación decorativa del fondo
-  const datos = Array.from({ length: cantidadBarras }, (_, i) => ({
+    // aquí solo se usa para la animación decorativa del fondo
+    const datos = Array.from({ length: cantidadBarras }, (_, i) => ({
         id: i,
         valor: Math.random() * 100
     }));
