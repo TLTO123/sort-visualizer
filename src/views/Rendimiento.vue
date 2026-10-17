@@ -1,7 +1,27 @@
 <script setup>
+// ============================================================
+// ARCHIVO: views/Rendimiento.vue
+// RESPONSABLE: prueba de rendimiento con los 4 algoritmos EN PARALELO
+// CONCEPTOS CLAVE:
+//   - Los algoritmos son GENERADORES (function* + yield): cada yield es
+//     una "foto" del arreglo lista para animarse.
+//   - Cada algoritmo tiene su "hilo" propio: generador + setTimeout +
+//     cronómetro, indexados por su selector CSS en diccionarios.
+//   - Cada algoritmo ordena una COPIA independiente de la lista.
+//   - El estado de ejecución es EXPLÍCITO (estaEjecutando/estaPausado):
+//     el botón reacciona al estado, nunca se infiere de efectos secundarios.
+//   - Responsividad con ResizeObserver sobre cada contenedor (no
+//     window.resize): en móvil la rotación dispara eventos poco fiables.
+// ============================================================
+
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import * as d3 from 'd3';
 import { renderizarBarras } from '../components/renderizarBarras.js';
+import { bubbleSortGenerador } from '../algorithms/generadores.js';
+import { selectionSortGenerador } from '../algorithms/generadores.js';
+import { insertionSortGenerador } from '../algorithms/generadores.js';
+import { quickSortGenerador } from '../algorithms/generadores.js';
+import { generarId } from '../utils/ids.js'; // Id con fallback: funciona también en http por IP (móvil)
 
 // Estado de la simulación
 const estaPausado = ref(false);
@@ -202,7 +222,7 @@ const generarNuevaLista = () => {
 
   const cantidad = Math.floor(Math.random() * 31) + 10;
   listaNumeros.value = Array.from({ length: cantidad }, () => ({
-    id: crypto.randomUUID(),
+    id: generarId(),
     valor: Math.floor(Math.random() * 91) + 10,
     estado: 'default'
   }));
@@ -210,151 +230,33 @@ const generarNuevaLista = () => {
   actualizarTodasLasGraficas(0);
 };
 
-// ---------------- ALGORITMOS DE ORDENAMIENTO ----------------
-function* selectionSortGenerador(arreglo) {
-  const arr = arreglo.map((d) => ({ ...d, estado: 'default' }));
-  const n = arr.length;
-
-  for (let i = 0; i < n - 1; i++) {
-    let minIdx = i;
-    arr[minIdx].estado = 'minimo';
-    yield { arr: [...arr] };
-
-    for (let j = i + 1; j < n; j++) {
-      arr[j].estado = 'comparando';
-      yield { arr: [...arr] };
-
-      if (arr[j].valor < arr[minIdx].valor) {
-        arr[minIdx].estado = 'default';
-        minIdx = j;
-        arr[minIdx].estado = 'minimo';
-        yield { arr: [...arr] };
-      } else {
-        arr[j].estado = 'default';
-      }
-    }
-
-    if (minIdx !== i) {
-      [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
-      yield { arr: [...arr] };
-    }
-    arr[i].estado = 'ordenado';
-  }
-
-  if (n > 0) arr[n - 1].estado = 'ordenado';
-  arr.forEach((d) => { d.estado = 'ordenado'; });
-  yield { arr: [...arr], finalizado: true };
-}
-
-function* quickSortGenerador(arreglo) {
-  const arr = arreglo.map((d) => ({ ...d, estado: 'default' }));
-
-  function* partition(low, high) {
-    const pivot = arr[high];
-    pivot.estado = 'minimo';
-    let i = low - 1;
-
-    for (let j = low; j < high; j++) {
-      arr[j].estado = 'comparando';
-      yield { arr: [...arr] };
-
-      if (arr[j].valor < pivot.valor) {
-        i++;
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-        yield { arr: [...arr] };
-      }
-      arr[j].estado = 'default';
-    }
-
-    [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
-    pivot.estado = 'default';
-    yield { arr: [...arr] };
-    return i + 1;
-  }
-
-  function* quickSortHelper(low, high) {
-    if (low < high) {
-      const piIndex = yield* partition(low, high);
-      yield* quickSortHelper(low, piIndex - 1);
-      yield* quickSortHelper(piIndex + 1, high);
-    } else if (low === high && low >= 0 && low < arr.length) {
-      arr[low].estado = 'ordenado';
-    }
-  }
-
-  yield* quickSortHelper(0, arr.length - 1);
-  arr.forEach((d) => { d.estado = 'ordenado'; });
-  yield { arr: [...arr], finalizado: true };
-}
-
-function* bubbleSortGenerador(arreglo) {
-  const arr = arreglo.map((d) => ({ ...d, estado: 'default' }));
-  const n = arr.length;
-
-  for (let i = 0; i < n - 1; i++) {
-    let huboIntercambio = false;
-
-    for (let j = 0; j < n - i - 1; j++) {
-      arr[j].estado = 'comparando';
-      arr[j + 1].estado = 'comparando';
-      yield { arr: [...arr] };
-
-      if (arr[j].valor > arr[j + 1].valor) {
-        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
-        huboIntercambio = true;
-        yield { arr: [...arr] };
-      }
-
-      arr[j].estado = 'default';
-      arr[j + 1].estado = 'default';
-    }
-
-    arr[n - 1 - i].estado = 'ordenado';
-    if (!huboIntercambio) break;
-  }
-
-  arr.forEach((d) => { d.estado = 'ordenado'; });
-  yield { arr: [...arr], finalizado: true };
-}
-
-function* insertionSortGenerador(arreglo) {
-  const arr = arreglo.map((d) => ({ ...d, estado: 'default' }));
-  const n = arr.length;
-
-  for (let i = 1; i < n; i++) {
-    const key = arr[i];
-    let j = i - 1;
-    key.estado = 'minimo';
-    yield { arr: [...arr] };
-
-    while (j >= 0 && arr[j].valor > key.valor) {
-      arr[j + 1].estado = 'comparando';
-      yield { arr: [...arr] };
-      arr[j + 1] = arr[j];
-      j--;
-      yield { arr: [...arr] };
-    }
-
-    arr[j + 1] = key;
-    for (let k = 0; k <= i; k++) {
-      arr[k].estado = 'ordenado';
-    }
-    yield { arr: [...arr] };
-  }
-
-  arr.forEach((d) => { d.estado = 'ordenado'; });
-  yield { arr: [...arr], finalizado: true };
-}
-
 // ---------------- CREACIÓN Y AJUSTE DE GRÁFICAS ----------------
-const ajustarGraficas = () => {
-  selectores.forEach((selector) => {
-    const contenedor = document.querySelector(selector);
-    if (!contenedor) return;
+let observadorContenedores = null; // ResizeObserver de los 4 contenedores
+let ajustePendiente = false;
 
-    d3.select(selector).select('svg').attr('width', contenedor.clientWidth || 400);
-    const datos = estadosVisuales[selector] || listaNumeros.value;
-    if (datos.length) renderizarBarras(datos, 0, selector);
+const ajustarGraficas = () => {
+  // Durante una rotación llegan muchos eventos seguidos: en vez de
+  // redibujar 4 gráficas en cada uno, se redibuja UNA vez por frame.
+  if (ajustePendiente) return;
+  ajustePendiente = true;
+
+  requestAnimationFrame(() => {
+    ajustePendiente = false;
+
+    selectores.forEach((selector) => {
+      const contenedor = document.querySelector(selector);
+      if (!contenedor) return;
+
+      // A mitad de rotación el contenedor puede medir 0 un instante:
+      // ignorar esa medición transitoria en vez de escribir un ancho
+      // falso que ya nadie corregiría (ese era el bug al volver a vertical).
+      const ancho = contenedor.clientWidth;
+      if (!ancho) return;
+
+      d3.select(selector).select('svg').attr('width', ancho);
+      const datos = estadosVisuales[selector] || listaNumeros.value;
+      if (datos.length) renderizarBarras(datos, 0, selector);
+    });
   });
 };
 
@@ -374,12 +276,20 @@ onMounted(() => {
   });
 
   generarNuevaLista();
-  window.addEventListener('resize', ajustarGraficas);
+
+  // Se observa el CONTENEDOR, no la ventana: en móvil, girar el teléfono
+  // a veces dispara resize con medidas viejas o no dispara nada. El
+  // ResizeObserver redibuja cuando el contenedor ya tiene su medida FINAL.
+  observadorContenedores = new ResizeObserver(ajustarGraficas);
+  selectores.forEach((selector) => {
+    const contenedor = document.querySelector(selector);
+    if (contenedor) observadorContenedores.observe(contenedor);
+  });
 });
 
 onBeforeUnmount(() => {
   detenerTodasLasAnimaciones();
-  window.removeEventListener('resize', ajustarGraficas);
+  observadorContenedores?.disconnect(); // Dejar de observar al salir de la vista
 });
 </script>
 
@@ -428,6 +338,8 @@ onBeforeUnmount(() => {
 
     <section class="resultados-grid">
       <article class="tarjeta-algoritmo lexend">
+        <!-- El nombre viene de algoritmos.json, pero el algoritmo que corre aquí
+             (bubbleSortGenerador en generadores.js) es burbuja simple, no bidireccional -->
         <h3 class="text-subtitle">Burbuja (Bidireccional)</h3>
         <div id="grafico-bubble" class="contenedor-svg"></div>
         <time class="cronometro text-button">{{ formatearTiempo(tiemposAlgoritmos['#grafico-bubble']) }}</time>
@@ -455,6 +367,22 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.contenedor-svg {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 250px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.contenedor-svg svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: 250px;
+}
+
 .contenedor {
   background-color: #1E1E1E;
   color: #FFFFFF;

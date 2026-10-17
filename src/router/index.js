@@ -1,5 +1,12 @@
-import { createRouter, createWebHistory } from "vue-router";
+// ============================================================
+// CONFIGURACIÓN DE RUTAS (Vue Router en modo HTML5 history)
+// Cada ruta carga una vista de src/views/ y arrastra un
+// meta.title que App.vue muestra en el header dinámicamente.
+// IMPORTANTE: al agregar una vista nueva, agregarla aquí Y en
+// el menú de App.vue.
+// ============================================================
 
+import { createRouter, createWebHistory } from "vue-router";
 import OrdenarMiLista from "../views/OrdenarMiLista.vue";
 import Inicio from "../views/Inicio.vue";
 import Rendimiento from "../views/Rendimiento.vue";

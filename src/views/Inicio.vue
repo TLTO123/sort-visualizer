@@ -1,19 +1,31 @@
 <script setup>
+// ============================================================
+// ARCHIVO: views/Inicio.vue
+// RESPONSABLE: portada del sitio
+// QUÉ HACE: 1) carga las tarjetas "Interactivo/Educativo/Medición"
+//              desde contenido.json (Criterio 2);
+//           2) anima un fondo de barras con D3 (decorativo, Math.random).
+// ============================================================
+
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useApi } from '../composables/useApi';
 import * as d3 from 'd3';
 
+// Contenido dinámico de las tarjetas (JSON → estados cargando/error)
 const { datos, cargando, error, cargar } = useApi('contenido');
-const contenedorHero = ref(null);
-let intervaloAnimacion = null;
+const contenedorHero = ref(null); // ref al <div> donde D3 inserta el <svg>
+let intervaloAnimacion = null; // handle del setInterval (se limpia al desmontar)
 
-onMounted(cargar);
+onMounted(cargar); // pide contenido.json al montar
 onMounted(() => {
+    // --- ANIMACIÓN DECORATIVA DEL HERO (a través de D3) --
     const ancho = contenedorHero.value.clientWidth || window.innerWidth * 0.9;
     const alto = 400;
 
     const cantidadBarras = Math.floor(ancho / 30);
-    const datos = Array.from({ length: cantidadBarras }, (_, i) => ({
+    // Ojo: este 'datos' es local y "tapa" al 'datos' del composable (línea 15);
+  // aquí solo se usa para la animación decorativa del fondo
+  const datos = Array.from({ length: cantidadBarras }, (_, i) => ({
         id: i,
         valor: Math.random() * 100
     }));
@@ -45,17 +57,20 @@ onMounted(() => {
             .ease(d3.easeSinInOut)
             .attr("y", d => alto - escalaY(d.valor))
             .attr("height", d => escalaY(d.valor))
-            // Lógica de colores actualizada con tu paleta
+            // Colores decorativos según el valor aleatorio de cada barra
+            // (ojo: no tienen nada que ver con los estados 'comparando'/'minimo'
+            // de los algoritmos, aquí solo importa el número que salga)
             .attr("fill", d => {
-                if (d.valor > 80) return '#FFB3BA'; // Rosa claro (comparando)
-                if (d.valor > 50) return '#7DD3FC'; // Azul claro (mínimo)
-                if (d.valor > 20) return '#374151'; // Gris oscuro (default)
-                return '#4B5563';                   // Gris más oscuro (ordenado)
+                if (d.valor > 80) return '#FFB3BA'; // valor alto → rosa
+                if (d.valor > 50) return '#7DD3FC'; // valor medio-alto → azul
+                if (d.valor > 20) return '#374151'; // valor medio → gris oscuro
+                return '#4B5563';                   // valor bajo → gris (más claro que el anterior)
             });
     };
 
     animarFondo(datos, 800);
 
+    // nueva "foto" cada 2 s
     intervaloAnimacion = setInterval(() => {
         const nuevosDatos = datos.map(d => ({
             ...d,
@@ -65,6 +80,8 @@ onMounted(() => {
     }, 2000);
 });
 
+// LIMPIEZA OBLIGATORIA: sin esto, el intervalo sobreviviría al componente
+// y escribiría en un DOM ya destruido (fuga de memoria).
 onUnmounted(() => {
     if (intervaloAnimacion) {
         clearInterval(intervaloAnimacion);
@@ -97,6 +114,7 @@ onUnmounted(() => {
         <div class="charts">
             <div ref="contenedorHero" id="grafica-barra" class="mt-3 w-full opacity-60 pointer-events-none overflow-hidden mask-fade-out"></div>
         </div>
+        <!-- Tres estados mutuamente excluyentes de la carga del JSON -->
         <p v-if="cargando" class="mono text-body">Cargando algoritmos...</p>
         <p v-else-if="error" class="mono text-body">
         No se pudo cargar el contenido. <button @click="cargar">Reintentar</button>
@@ -178,12 +196,13 @@ onUnmounted(() => {
 
 }
 
+/* .charts: sección de la gráfica decorativa */
 .charts {
     display: flex;
     justify-content: center;
 
     #grafica-barra {
-        height: 400px !important;
+        height: 400px !important; /* el SVG de D3 necesita altura explícita */
     }
 }
 

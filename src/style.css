@@ -1,5 +1,6 @@
-@import "tailwindcss";
+@import "tailwindcss"; /* Tailwind v4 */
 
+/* Tipografías propias (embebidas, sin depender de CDNs externos) */
 @font-face {
     font-family: 'Lexend';
     src: url('../src/fonts/Lexend-SemiBold.ttf') format('truetype');
@@ -16,19 +17,25 @@
     font-display: swap;
 }
 
+/*  ============================================================
+    TOKENS DE DISEÑO (design tokens)
+    Tamaños de texto definidos como variables de CSS que Tailwind
+    expone como utilidades (--text-title → class="text-title").
+    Escalan con media queries: móvil → tablet → PC.
+    ============================================================ */
 @theme {
-  --text-body: 0.625rem;       /* 10px */
-  --text-subtitle: 0.875rem;   /* 14px */
-  --text-title: 1rem;          /* 16px */
-  --text-button: 0.6875rem;    /* 11px */
+  --text-body: 0.75rem;       /* 12px */
+  --text-subtitle: 0.9375rem; /* 15px */
+  --text-title: 1.125rem;     /* 18px */
+  --text-button: 0.8125rem;   /* 13px */
 }
 
 @media (min-width: 768px) {
 :root {
-    --text-body: 0.75rem;       /* 12px */
+    --text-body: 0.8125rem;   /* 13px */
     --text-subtitle: 1rem;      /* 16px */
-    --text-title: 1.125rem;     /* 18px */
-    --text-button: 0.8125rem;   /* 13px */
+    --text-title: 1.25rem;      /* 20px */
+    --text-button: 0.875rem;    /* 14px */
 }
 }
 
@@ -41,20 +48,24 @@
 }
 }
 
+/* Fondo oscuro base (por ahora ninguna vista lo usa, queda por si se necesita) */
 .contenedor-principal{
     background-color: #121212;
 }
 
+/* Aplica la fuente de títulos (peso 600) */
 .lexend{
     font-family: 'Lexend';
     font-weight: 600;
 }
 
+/* Aplica la fuente monoespaciada del cuerpo */
 .mono{
     font-family: 'Atkinson Hyperlegible Mono';
     font-weight: 600;
 }
 
+/* Gradiente de fondo reutilizado en varias vistas */
 .fondo-gradiente {
   /* El gradiente lineal */
     background-image: linear-gradient(

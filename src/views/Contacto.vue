@@ -1,4 +1,14 @@
 <script setup>
+// ============================================================
+// ARCHIVO: views/Contacto.vue
+// RESPONSABLE: formulario de contacto
+// SERVICIO: EmailJS — envía el correo REAL vía su API REST, sin backend propio.
+// FLUJO: submit → emailjs.sendForm(serviceID, templateID, form, publicKey)
+//        → try: alert de éxito + form.reset() · catch: alert de error
+// NOTAS DE SEGURIDAD: la Public Key está diseñada para exponerse en cliente;
+//   no hay datos sensibles ni almacenamiento propio.
+// ============================================================
+
 import { ref } from 'vue';
 import emailjs from '@emailjs/browser';
 
@@ -35,10 +45,10 @@ const enviarCorreo = async () => {
 
 <template>
     <div class="container-main">
-        <div class="intro lexend">
-            <h1 class="text-title mb-2">Comprende los algoritmos de ordenamiento visualmente</h1>
+        <div class="intro">
+            <h1 class="text-title mb-2 lexend">Comprende los algoritmos de ordenamiento visualmente</h1>
             <hr />
-            <h1 class="m-2 text-subtitle">
+            <h1 class="m-2 text-subtitle mono">
                 ¿Tienes alguna duda, sugerencia o comentario sobre SortVisualizer? Nos interesa conocer tu
                 opinión y ayudarte en todo lo relacionado con la aplicación. Utiliza el formulario de contacto para
                 enviarnos tus consultas, reportar inconvenientes o compartir ideas que contribuyan a mejorar la
@@ -53,7 +63,7 @@ const enviarCorreo = async () => {
                 <!-- Formulario conectado a EmailJS -->
                 <form ref="formRef" @submit.prevent="enviarCorreo" class="space-y-8">
 
-                    <!-- Opcional: Campo oculto para la variable {{title}} -->
+                    <!-- Campo oculto para la variable {{title}} -->
                     <input type="hidden" name="title" value="Nuevo contacto desde SortVisualizer">
 
                     <!-- Campo nombre -->

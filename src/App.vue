@@ -1,4 +1,12 @@
 <script setup>
+// ============================================================
+// ARCHIVO: App.vue
+// RESPONSABLE: layout global (header, main, footer) + menú offcanvas
+// QUÉ HACE: renderiza la vista activa (<RouterView>) bajo un encabezado
+//           cuyo título cambia dinámicamente según la ruta.
+// DEPENDENCIAS: vue-router (rutas definidas en router/index.js)
+// ============================================================
+
 import { RouterView } from 'vue-router';
 import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
@@ -54,7 +62,9 @@ watch(
   <!-- Overlay -->
   <div id="overlay" class="fixed inset-0 z-40 hidden bg-black/50"></div>
   
-  <!--Contenido dentro del offcanvas-->
+  <!--Contenido dentro del offcanvas. Nota: los atributos data-twe-* son restos de
+      Tailwind Elements, que NO está instalada, así que no hacen nada;
+      el menú lo maneja main.js con clases de Tailwind-->
   <div class="fixed bottom-0 left-0 top-0 z-1045 flex w-96 max-w-full -translate-x-full flex-col border-none bg-[#141414] bg-clip-padding text-white shadow-sm outline-none transition duration-300 ease-in-out data-twe-offcanvas-show:transform-none" tabindex="-1" id="offcanvas" aria-labelledby="offcanvasLabel" data-twe-offcanvas-init>
     <div class="flex items-center justify-between p-4 mt-5">
       <h2 class="text-subtitle ml-2 mt-2 lexend font-bold">
@@ -67,22 +77,22 @@ watch(
     <nav class="p-4 mt-10">
       <ul class="space-y-2">
         <li>
-          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Inicio</router-link>
+          <router-link class="link block text-button lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/">Inicio</router-link>
         </li>
         <li>
-          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/catalogo">Catálogo</router-link>
+          <router-link class="link block text-button lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/catalogo">Catálogo</router-link>
         </li>
         <li>
-          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/rendimiento">Rendimiento</router-link>
+          <router-link class="link block text-button lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/rendimiento">Rendimiento</router-link>
         </li>
         <li>
-          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/ordenar-mi-lista">Ordenar mi lista</router-link>
+          <router-link class="link block text-button lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/ordenar-mi-lista">Ordenar mi lista</router-link>
         </li>
         <li>
-          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/desarrolladores">Desarrolladores</router-link>
+          <router-link class="link block text-button lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/desarrolladores">Desarrolladores</router-link>
         </li>
         <li>
-          <router-link class="link block text-body lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/Contacto">Contacto</router-link>
+          <router-link class="link block text-button lexend rounded-lg px-4 py-3 hover:bg-yellow-500" to="/Contacto">Contacto</router-link>
         </li>
       </ul>
     </nav>
