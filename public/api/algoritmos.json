@@ -1,44 +1,32 @@
 [{
     "id": "burbuja",
     "nombre": "Burbuja (Bidireccional)",
-    "selector": "#grafico-bubble",
     "dificultad": "Media",
     "porcentaje": 55,
     "complejidad": { "mejor": "O(n)", "promedio": "O(n²)", "peor": "O(n²)" },
-    "estable": true,
-    "descripcion": "Este algoritmo recorre la lista en ambas direcciones, comparando elementos adyacentes e intercambiándolos cuando se encuentran en el orden incorrecto. El proceso se repite hasta que la lista queda completamente ordenada.",
-    "wiki": "Ordenamiento_por_burbuja"
+    "descripcion": "Este algoritmo recorre la lista en ambas direcciones, comparando elementos adyacentes e intercambiándolos cuando se encuentran en el orden incorrecto. El proceso se repite hasta que la lista queda completamente ordenada."
 },
 {
     "id": "seleccion",
     "nombre": "Ordenamiento por Selección",
-    "selector": "#grafico-selection",
     "dificultad": "Media",
     "porcentaje": 55,
     "complejidad": { "mejor": "O(n²)", "promedio": "O(n²)", "peor": "O(n²)" },
-    "estable": false,
-    "descripcion": "Busca el elemento más pequeño dentro de la parte no ordenada de la lista y lo coloca en su posición correspondiente. Este procedimiento continúa hasta ordenar todos los elementos.",
-    "wiki": "Ordenamiento_por_selección"
+    "descripcion": "Busca el elemento más pequeño dentro de la parte no ordenada de la lista y lo coloca en su posición correspondiente. Este procedimiento continúa hasta ordenar todos los elementos."
 },
 {
     "id": "insercion",
     "nombre": "Ordenamiento por Inserción",
-    "selector": "#grafico-insertion",
     "dificultad": "Baja",
     "porcentaje": 40,
     "complejidad": { "mejor": "O(n)", "promedio": "O(n²)", "peor": "O(n²)" },
-    "estable": true,
-    "descripcion": "Construye la lista ordenada de manera progresiva. Cada elemento se toma y se inserta en la posición correcta dentro de la parte de la lista que ya se encuentra ordenada.",
-    "wiki": "Ordenamiento_por_inserción"
+    "descripcion": "Construye la lista ordenada de manera progresiva. Cada elemento se toma y se inserta en la posición correcta dentro de la parte de la lista que ya se encuentra ordenada."
 },
 {
     "id": "quicksort",
     "nombre": "Quicksort (Ordenamiento rápido)",
-    "selector": "#grafico-quicksort",
     "dificultad": "Alta",
     "porcentaje": 75,
     "complejidad": { "mejor": "O(n log n)", "promedio": "O(n log n)", "peor": "O(n²)" },
-    "estable": false,
-    "descripcion": "Divide la lista utilizando un elemento como pivote. Los valores menores se colocan a un lado y los mayores al otro, repitiendo el proceso hasta obtener la lista completamente ordenada.",
-    "wiki": "Quicksort"
+    "descripcion": "Divide la lista utilizando un elemento como pivote. Los valores menores se colocan a un lado y los mayores al otro, repitiendo el proceso hasta obtener la lista completamente ordenada."
 }]

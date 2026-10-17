@@ -1,6 +1,25 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+// ============================================================
+// ARCHIVO: views/OrdenarMiLista.vue
+// RESPONSABLE: el USUARIO escribe la lista
+//   y elige UN algoritmo; se visualiza paso a paso con cronómetro.
+// CONCEPTOS CLAVE:
+//   - Misma arquitectura de generadores/reproductor que Rendimiento.vue,
+//     pero con UN solo "hilo" (sin diccionarios por selector).
+//   - El usuario puede editar la lista en caliente: el watch(valoresInput)
+//     cancela la ejecución y redibuja la previsualización al instante.
+//   - D3 recibe los datos completos en cada paso y anima la diferencia
+//     vía data join con clave estable (id).
+// ============================================================
+
+import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import * as d3 from 'd3';
+import { renderizarBarras } from '../components/renderizarBarras.js';
+import { bubbleSortGenerador } from '../algorithms/generadores.js';
+import { selectionSortGenerador } from '../algorithms/generadores.js';
+import { insertionSortGenerador } from '../algorithms/generadores.js';
+import { quickSortGenerador } from '../algorithms/generadores.js';
+import { generarId } from '../utils/ids.js'; // Id con fallback: funciona también en http por IP (móvil)
 
 
 // Referencias de la interfaz
@@ -8,6 +27,7 @@ const valoresInput = ref("26, 87, 30, 19, 63, 83, 27, 88, 81, 26, 79, 75, 76, 84
 const algoritmoSeleccionado = ref("bubble");
 const velocidadSlider = ref(50);
 const estaPausado = ref(false);
+const estaEjecutando = ref(false); // Explícito: ¿hay un generador vivo ahora mismo?
 const contenedorGrafico = ref(null);
 
 // Variables de estado
@@ -33,268 +53,66 @@ const tiempoFormateado = computed(() => {
   return `${min}:${sec}:${cs}`;
 });
 
+// medidas base del SVG: el margen ya no se usa porque renderizarBarras.js
+// calcula los suyos propios según el tamaño de la pantalla
 const configSVG = { ancho: 800, alto: 450, margen: 15 };
 const velocidadMs = computed(() => 1010 - (velocidadSlider.value * 10));
 
-onMounted(() => {
-  // 1. Obtener el ancho real del contenedor en la pantalla del usuario
-  configSVG.ancho = contenedorGrafico.value.clientWidth || 800;
+// Ajusta el SVG a la medida REAL del contenedor. Se usa ResizeObserver
+// en vez de window.resize porque es confiable al rotar el móvil.
+// Nota: renderizarBarras.js también recalcula el ancho por su cuenta,
+// así que esto queda como respaldo para mantener configSVG.ancho al día.
+let observadorContenedor = null;
+const ajustarGrafica = () => {
+  if (!contenedorGrafico.value || !svg) return;
 
-  // 2. Crear el SVG usando dimensiones fijas (sin viewBox)
-  svg = d3.select(contenedorGrafico.value)
-    .append("svg")
-    .attr("width", configSVG.ancho)
-    .attr("height", configSVG.alto);
+  // A mitad de rotación clientWidth puede reportar 0: ignorar esa medición
+  const ancho = contenedorGrafico.value.clientWidth;
+  if (!ancho) return;
 
-  parsearInputYRenderizar();
+  configSVG.ancho = ancho;
+  svg.attr("width", ancho);
 
-  // 3. Escuchar cambios de tamaño (por si el usuario rota el móvil)
-  window.addEventListener('resize', () => {
-    if (!contenedorGrafico.value) return;
-
-    // Recalcular el ancho y actualizar el SVG instantáneamente
-    configSVG.ancho = contenedorGrafico.value.clientWidth;
-    svg.attr("width", configSVG.ancho);
-
-    // Redibujar las barras para que se adapten al nuevo espacio
-    if (datos.length > 0) {
-      renderizarBarras(datos, 0);
-    }
-  });
-});
-
-// Selector de colores basado en el estado
-const obtenerColor = (estado) => {
-  if (estado === 'comparando') return '#FFB3BA'; // Rosa claro
-  if (estado === 'minimo') return '#7DD3FC';     // Azul claro
-  if (estado === 'ordenado') return '#374151';   // Gris un poco más oscuro
-  return '#4B5563'; // Gris oscuro base (default)
+  if (datos.length > 0) {
+    renderizarBarras(datos, 0, contenedorGrafico.value,true);
+  }
 };
 
-function renderizarBarras(arreglo, duracion = 0) {
-  if (!svg) return;
+onMounted(async () => {
+  // 1. Obligamos a la lógica a esperar a que el HTML esté completamente en el DOM
+  await nextTick();
 
-  const anchoBarra = (configSVG.ancho - (configSVG.margen * 2)) / arreglo.length;
-  // Si la barra es muy estrecha, reducimos el espacio entre ellas para aprovechar píxeles
-  const espacio = anchoBarra > 15 ? 6 : 2;
-  const valorMaximo = d3.max(arreglo, d => d.valor) || 1;
-  const escalaY = d3.scaleLinear().domain([0, valorMaximo]).range([0, configSVG.alto - 50]);
+  // 2. Le damos 50ms al navegador del celular para aplicar los estilos de Tailwind
+  setTimeout(() => {
+    if (!contenedorGrafico.value) return;
 
-  // 1. Renderizar Rectángulos (Barras)
-  const barras = svg.selectAll("rect.barra")
-    .data(arreglo, d => d.id);
+    // 3. Fallback inteligente: si clientWidth lee 0, toma el ancho de la pantalla del móvil menos un pequeño margen
+    configSVG.ancho = contenedorGrafico.value.clientWidth || (window.innerWidth - 40);
 
-  barras.enter()
-    .append("rect")
-    .attr("class", "barra")
-    .attr("y", configSVG.alto)
-    .attr("height", 0)
-    .attr("rx", 6) // Bordes redondeados de la imagen
-    .attr("ry", 6)
-    .merge(barras)
-    .transition().duration(duracion)
-    .attr("x", (d, i) => i * anchoBarra + configSVG.margen)
-    .attr("y", d => configSVG.alto - escalaY(d.valor))
-    .attr("width", anchoBarra - espacio)
-    .attr("height", d => escalaY(d.valor))
-    .attr("fill", d => obtenerColor(d.estado));
+    svg = d3.select(contenedorGrafico.value)
+      .append("svg")
+      .attr("width", configSVG.ancho)
+      .attr("height", configSVG.alto);
 
-  barras.exit().remove();
+    parsearInputYRenderizar();
+  }, 50);
 
-  // 2. Renderizar Textos (Valores encima de las barras)
-  const textos = svg.selectAll("text.etiqueta")
-    .data(arreglo, d => d.id);
+  // 4. Observamos el CONTENEDOR (no la ventana): al girar el móvil el
+  // redibujo ocurre cuando el layout ya asentó y con la medida real.
+  observadorContenedor = new ResizeObserver(ajustarGrafica);
+  observadorContenedor.observe(contenedorGrafico.value);
+});
 
-  textos.enter()
-    .append("text")
-    .attr("class", "etiqueta text-white lexend font-bold text-sm")
-    .attr("text-anchor", "middle")
-    .attr("fill", "#ffffff")
-    .attr("y", configSVG.alto)
-    .merge(textos)
-    .text(d => d.valor)
-    // Usamos opacity como interruptor infalible y reevaluamos el tamaño en cada render
-    .style("opacity", anchoBarra < 30 ? 0 : 1)
-    .attr("font-size", anchoBarra < 40 ? "11px" : "14px")
-    .transition().duration(duracion)
-    .attr("x", (d, i) => (i * anchoBarra + configSVG.margen) + ((anchoBarra - espacio) / 2))
-    .attr("y", d => configSVG.alto - escalaY(d.valor) - 10); // 10px arriba de la barra
-
-  textos.exit().remove();
-}
-
-// Funciones que ejecutan los métodos de ordenamiento
-// --- MÉTODO BURBUJA (BUBBLE SORT) ---
-function* bubbleSortGenerador(arreglo) {
-  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
-  let n = arr.length;
-
-  for (let i = 0; i < n - 1; i++) {
-    let huboIntercambio = false;
-
-    for (let j = 0; j < n - i - 1; j++) {
-      // Marcar los elementos que se están comparando
-      arr[j].estado = 'comparando';
-      arr[j + 1].estado = 'comparando';
-      yield { arr: [...arr] };
-
-      if (arr[j].valor > arr[j + 1].valor) {
-        // Intercambiar elementos
-        let temp = arr[j];
-        arr[j] = arr[j + 1];
-        arr[j + 1] = temp;
-        huboIntercambio = true;
-        yield { arr: [...arr] };
-      }
-
-      // Regresar al estado por defecto los que se compararon
-      arr[j].estado = 'default';
-      arr[j + 1].estado = 'default';
-    }
-
-    // Marcar el elemento ya ordenado al final del recorrido
-    arr[n - 1 - i].estado = 'ordenado';
-
-    if (!huboIntercambio) break; // Optimización si ya está ordenado
-  }
-
-  // Asegurar que todos queden marcados como ordenados al final
-  arr.forEach(d => d.estado = 'ordenado');
-  yield { arr: [...arr], finalizado: true };
-}
-
-// --- MÉTODO SELECCIÓN (SELECTION SORT) ---
-function* selectionSortGenerador(arreglo) {
-  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
-  let n = arr.length;
-
-  for (let i = 0; i < n - 1; i++) {
-    let minIdx = i;
-    arr[minIdx].estado = 'minimo';
-    yield { arr: [...arr] }; // Renderiza el azul
-
-    for (let j = i + 1; j < n; j++) {
-      arr[j].estado = 'comparando';
-      yield { arr: [...arr] }; // Renderiza el rosa temporalmente
-
-      if (arr[j].valor < arr[minIdx].valor) {
-        arr[minIdx].estado = 'default';
-        minIdx = j;
-        arr[minIdx].estado = 'minimo'; // Nuevo azul
-        yield { arr: [...arr] };
-      } else {
-        arr[j].estado = 'default';
-      }
-    }
-
-    if (minIdx !== i) {
-      let temp = arr[i];
-      arr[i] = arr[minIdx];
-      arr[minIdx] = temp;
-      yield { arr: [...arr] }; // Anima el intercambio
-    }
-    arr[i].estado = 'ordenado';
-  }
-  arr[n - 1].estado = 'ordenado';
-  yield { arr: [...arr], finalizado: true };
-}
-
-// --- MÉTODO INSERCIÓN (INSERTION SORT) ---
-function* insertionSortGenerador(arreglo) {
-  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
-  let n = arr.length;
-
-  for (let i = 1; i < n; i++) {
-    let key = arr[i];
-    let j = i - 1;
-
-    // Resaltar el elemento que se va a insertar
-    key.estado = 'minimo';
-    yield { arr: [...arr] };
-
-    while (j >= 0 && arr[j].valor > key.valor) {
-      arr[j + 1].estado = 'comparando';
-      yield { arr: [...arr] };
-
-      arr[j + 1] = arr[j];
-      j = j - 1;
-      yield { arr: [...arr] };
-    }
-
-    arr[j + 1] = key;
-
-    // Marcar progresivamente los elementos ya recorridos como ordenados hasta la posición i
-    for (let k = 0; k <= i; k++) {
-      arr[k].estado = 'ordenado';
-    }
-    yield { arr: [...arr] };
-  }
-
-  // Marcar todos como ordenados al finalizar
-  arr.forEach(d => d.estado = 'ordenado');
-  yield { arr: [...arr], finalizado: true };
-}
-
-// --- MÉTODO QUICKSORT (QUICK SORT) ---
-function* quickSortGenerador(arreglo) {
-  let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
-
-  // Función partición interna
-  function* particion(low, high) {
-    let pivotIdx = high;
-    arr[pivotIdx].estado = 'minimo'; // El pivote se pinta azul
-    yield { arr: [...arr] };
-
-    let i = low - 1;
-    for (let j = low; j < high; j++) {
-      arr[j].estado = 'comparando';
-      yield { arr: [...arr] };
-
-      if (arr[j].valor < arr[pivotIdx].valor) {
-        i++;
-        let temp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = temp;
-        yield { arr: [...arr] };
-      }
-      arr[j].estado = 'default';
-    }
-
-    // Colocar el pivote en su posición final
-    i++;
-    let temp = arr[i];
-    arr[i] = arr[pivotIdx];
-    arr[pivotIdx] = temp;
-
-    arr[i].estado = 'ordenado'; // Este pivote ya encontró su lugar final
-    yield { arr: [...arr] };
-    return i;
-  }
-
-  // Función recursiva interna. Usamos yield* para delegar el control
-  function* quickSortHelper(low, high) {
-    if (low < high) {
-      let pi = yield* particion(low, high);
-      yield* quickSortHelper(low, pi - 1);
-      yield* quickSortHelper(pi + 1, high);
-    } else if (low === high) {
-      arr[low].estado = 'ordenado';
-      yield { arr: [...arr] };
-    }
-  }
-
-  yield* quickSortHelper(0, arr.length - 1);
-
-  // Seguro final: forzar que todo se pinte como ordenado
-  arr.forEach(d => d.estado = 'ordenado');
-  yield { arr: [...arr], finalizado: true };
-}
+// Al salir de la vista: dejar de observar para no dejar callbacks huérfanos
+onBeforeUnmount(() => {
+  observadorContenedor?.disconnect();
+});
 
 // Controladores
 const parsearInputYRenderizar = () => {
   const valores = valoresInput.value.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
-  datos = valores.map(v => ({ id: crypto.randomUUID(), valor: v, estado: 'default' }));
-  renderizarBarras(datos, 0);
+  datos = valores.map(v => ({ id: generarId(), valor: v, estado: 'default' }));
+  renderizarBarras(datos, 0, contenedorGrafico.value,true);
 };
 
 const iniciarCronometro = () => {
@@ -315,18 +133,23 @@ const detenerCronometro = () => {
 };
 
 const reproducirSiguientePaso = () => {
+  // Aunque quede un timeout suelto, un paso NUNCA se ejecuta si está pausado o no corre nada.
+  if (!estaEjecutando.value || estaPausado.value) return;
   if (!algoritmoPausado) return;
+
   const paso = algoritmoPausado.next();
 
   if (paso.done || (paso.value && paso.value.finalizado)) {
     algoritmoPausado = null;
+    temporizadorAnimacion = null; // Limpiar el handle
+    estaEjecutando.value = false; // Terminó → nada está corriendo
     detenerCronometro(); // El algoritmo terminó
     estaPausado.value = false; // Resetear botón
-    if (paso.value) renderizarBarras(paso.value.arr, velocidadMs.value);
+    if (paso.value) renderizarBarras(paso.value.arr, velocidadMs.value, contenedorGrafico.value, true);
     return;
   }
 
-  renderizarBarras(paso.value.arr, velocidadMs.value);
+  renderizarBarras(paso.value.arr, velocidadMs.value, contenedorGrafico.value, true);
   temporizadorAnimacion = setTimeout(reproducirSiguientePaso, velocidadMs.value + 20);
 };
 
@@ -340,6 +163,7 @@ watch(valoresInput, () => {
   // 2. Apagar y resetear el cronómetro
   detenerCronometro();
   algoritmoPausado = null;
+  estaEjecutando.value = false; // Cancelado: nada está corriendo
   tiempoPausadoAcumulado.value = 0;
   tiempoActual.value = 0;
   estaPausado.value = false; // <-- Restablece el botón a "Pausar"
@@ -350,9 +174,11 @@ watch(valoresInput, () => {
 });
 
 const iniciarOrdenamiento = () => {
+  if (estaEjecutando.value) return; // Evita crear dos cadenas de pasos activas a la vez
   if (temporizadorAnimacion) clearTimeout(temporizadorAnimacion);
   parsearInputYRenderizar();
 
+  estaEjecutando.value = true;
   tiempoPausadoAcumulado.value = 0;
   tiempoActual.value = 0;
   estaPausado.value = false; // Resetear botón
@@ -377,16 +203,28 @@ const iniciarOrdenamiento = () => {
   reproducirSiguientePaso();
 };
 
+// Patrón de Rendimiento.vue: PRIMERO el toggle de estado, DESPUÉS reaccionar a él.
 const pausarOrdenamiento = () => {
-  if (temporizadorAnimacion) {
-    clearTimeout(temporizadorAnimacion);
-    temporizadorAnimacion = null;
+  if (!estaEjecutando.value) return; // Nada corriendo → el botón no hace nada
+
+  estaPausado.value = !estaPausado.value; // 1. El estado explícito manda
+
+  if (estaPausado.value) {
+    // 2a. PAUSAR: cortar cadena de pasos + cronómetro + congelar barras en vuelo
+    if (temporizadorAnimacion) {
+      clearTimeout(temporizadorAnimacion);
+      temporizadorAnimacion = null;
+    }
     detenerCronometro();
-    estaPausado.value = true;
-  } else if (algoritmoPausado) {
+    // Congela las barras donde estén: sin interrupt(), una transición de D3
+    // que esté en vuelo terminaría de moverse aunque el usuario ya pausó.
+    d3.select(contenedorGrafico.value).selectAll('rect').interrupt();
+  } else {
+    // 2b. REANUDAR: el generador sigue vivo y retoma donde quedó.
+    // Se programa con setTimeout (igual que Rendimiento) en vez de llamar
+    // directo: da margen a la transición y reutiliza la ruta del bucle.
     iniciarCronometro();
-    reproducirSiguientePaso();
-    estaPausado.value = false;
+    temporizadorAnimacion = setTimeout(reproducirSiguientePaso, velocidadMs.value);
   }
 };
 
@@ -407,6 +245,7 @@ const reiniciarOrdenamiento = () => {
 
   // 4. Resetear los estados del reproductor y botón
   algoritmoPausado = null;
+  estaEjecutando.value = false; // Reiniciado: nada está corriendo
   estaPausado.value = false;
 
   // 5. Redibujar el gráfico en su estado inicial
@@ -423,7 +262,7 @@ const reiniciarOrdenamiento = () => {
         Panel de ordenamiento personalizado
       </h1>
       <hr class="w-full border-t-3 border-gray-400/60 mt-2 mb-4" />
-      <p class="text-wrap mt-2 mb-5" id="desc-principal">
+      <p class="text-wrap text-subtitle mt-2 mb-5" id="desc-principal">
         Ingresa una lista de valores, selecciona el algoritmo
         de ordenamiento de tu preferencia y <span
           class="bg-linear-to-r from-[#ED9C71] to-[#F9DC8A] bg-clip-text text-transparent">visualiza paso a
@@ -481,8 +320,8 @@ const reiniciarOrdenamiento = () => {
             class="bg-[#FFE77A] hover:bg-[#e0c263] text-black lexend px-6 py-2 rounded-xl text-button transition-colors shadow-sm">
             Iniciar
           </button>
-          <button @click="pausarOrdenamiento" type="button"
-            class="bg-[#FFE77A] hover:bg-[#e0c263] text-black lexend px-6 py-2 rounded-xl text-button transition-colors shadow-sm">
+          <button @click="pausarOrdenamiento" type="button" :disabled="!estaEjecutando"
+            class="bg-[#FFE77A] hover:bg-[#e0c263] text-black lexend px-6 py-2 rounded-xl text-button transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
             {{ estaPausado ? 'Reanudar' : 'Pausar' }}
           </button>
           <button @click="reiniciarOrdenamiento" type="button"
@@ -508,12 +347,12 @@ const reiniciarOrdenamiento = () => {
       Resultado del ordenamiento
     </h2>
 
-    <!-- Cambio principal: p-3 en móviles, p-8 en desktop, y flexbox para la estructura -->
+    <!-- p-3 en móviles, p-8 en desktop, y flexbox para la estructura -->
     <div
       class="max-w-4xl mx-auto bg-[#1e1e20] border-2 border-[#000000] rounded-3xl p-3 sm:p-8 text-white shadow-2xl flex flex-col gap-4 sm:gap-6">
 
       <!-- Contenedor del gráfico garantizando ancho total -->
-      <figure ref="contenedorGrafico" class="grafico w-full flex items-center justify-center">
+      <figure ref="contenedorGrafico" id="contenedorGrafico" class="grafico w-full flex items-center justify-center">
         <!-- gráfico dinámico -->
       </figure>
 

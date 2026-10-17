@@ -1,9 +1,16 @@
 <script setup>
+// ============================================================
+// ARCHIVO: views/Catalogo.vue
+// RESPONSABLE: catálogo de los 4 algoritmos de ordenamiento
+// FUENTE DE DATOS: public/api/algoritmos.json (Criterio 2)
+// MIGRADO desde: array hardcodeado en el <script setup>
+// ============================================================
+
 import { onMounted } from 'vue';
 import { useApi } from '../composables/useApi';
 
 const { datos, cargando, error, cargar } = useApi('algoritmos');
-onMounted(cargar);
+onMounted(cargar); // sin esto el JSON nunca se pide (carga solo se DEFINE)
 </script>
 
 <template>
@@ -14,14 +21,14 @@ onMounted(cargar);
 
       <hr />
 
-      <p class="mono text-body">
+      <p class="mono text-subtitle">
         Estos algoritmos permiten organizar conjuntos de datos siguiendo
         diferentes estrategias. Cada método posee características propias,
         niveles de dificultad y comportamientos distintos dependiendo de la
         cantidad y distribución de los datos.
       </p>
 
-      <p class="mono text-body">
+      <p class="mono text-subtitle">
         Explora cada método para conocer de forma general cómo funciona y
         comparar su complejidad.
       </p>
@@ -29,10 +36,12 @@ onMounted(cargar);
 
     <!-- Tarjetas -->
     <div class="algoritmos-grid">
+      <!-- ESTADOS -->
       <p v-if="cargando" class="mono text-body">Cargando algoritmos...</p>
       <p v-else-if="error" class="mono text-body">
         No se pudo cargar el contenido. <button @click="cargar">Reintentar</button>
       </p>
+      <!-- :key="algoritmo.id" (no el nombre), identificador para los elementos a renderizar -->
       <article
         v-for="algoritmo in datos"
         :key="algoritmo.id"
@@ -80,7 +89,7 @@ onMounted(cargar);
 
           <div class="dato complejidad lexend">
             <span>Complejidad</span>
-            <strong>Mejor: {{ algoritmo.complejidad.mejor }}, Promedio: {{ algoritmo.complejidad.promedio }}, Peor: {{ algoritmo.complejidad.peor }}</strong>
+            <strong class="text-body">Mejor: {{ algoritmo.complejidad.mejor }}, Promedio: {{ algoritmo.complejidad.promedio }}, Peor: {{ algoritmo.complejidad.peor }}</strong>
           </div>
         </div>
       </article>

@@ -1,9 +1,17 @@
 <script setup>
+// ============================================================
+// ARCHIVO: views/Desarrolladores.vue
+// FUENTES: public/api/equipo.json + API REST de GitHub
+// FLUJO: equipo.json → obtenerEquipoCompleto() → fusión con GitHub → tarjetas
+// NOTA: no usa useApi() porque aquí hay DOS fuentes; el servicio github.js
+//       ya encapsula la fusión.
+// ============================================================
+
 import { ref, onMounted } from 'vue';
 import { obtenerEquipoCompleto } from '../services/github.js';
 
-const desarrolladores = ref(null);   // ← aquí vivirá el array combinado (JSON + GitHub)
-const cargando = ref(true);
+const desarrolladores = ref(null); // aquí vivirá el array combinado (JSON + GitHub)
+const cargando = ref(true); // arranca en true: la carga empieza en onMounted
 const error = ref(null);
 
 const cargarEquipo = async () => {
@@ -12,7 +20,7 @@ const cargarEquipo = async () => {
   try {
     desarrolladores.value = await obtenerEquipoCompleto();
   } catch (e) {
-    error.value = e.message;         // falla solo si /api/equipo.json no carga
+    error.value = e.message; // falla solo si /api/equipo.json no carga
   } finally {
     cargando.value = false;
   }
@@ -30,14 +38,14 @@ onMounted(cargarEquipo);
 
       <hr />
 
-      <p class="mono text-body">
+      <p class="mono text-subtitle">
         SortVisualizer es el resultado del trabajo colaborativo de un equipo de
         desarrolladores comprometidos con la creación de una herramienta
         educativa e interactiva para facilitar la comprensión de los algoritmos
         de ordenamiento.
       </p>
 
-      <p class="mono text-body">
+      <p class="mono text-subtitle">
         A continuación, conoce a los integrantes que hicieron posible este
         proyecto.
       </p>
