@@ -18,38 +18,68 @@
 // ============================================================
 
 // Funciones que ejecutan los métodos de ordenamiento
-// --- MÉTODO BURBUJA (BUBBLE SORT) ---
+// --- MÉTODO BURBUJA BIDIRECCIONAL (BUBBLE SORT) ---
 export function* bubbleSortGenerador(arreglo) {
   let arr = arreglo.map(d => ({ ...d, estado: 'default' }));
   let n = arr.length;
+  let huboIntercambio = true;
+  let inicio = 0;
+  let fin = n - 1;
 
-  for (let i = 0; i < n - 1; i++) {
-    let huboIntercambio = false;
+  while (huboIntercambio) {
+    huboIntercambio = false;
 
-    for (let j = 0; j < n - i - 1; j++) {
-      // Marcar los elementos que se están comparando
-      arr[j].estado = 'comparando';
-      arr[j + 1].estado = 'comparando';
+    // 1. Recorrido de izquierda a derecha (empuja el mayor al final)
+    for (let i = inicio; i < fin; i++) {
+      arr[i].estado = 'comparando';
+      arr[i + 1].estado = 'comparando';
       yield { arr: [...arr] };
 
-      if (arr[j].valor > arr[j + 1].valor) {
-        // Intercambiar elementos
-        let temp = arr[j];
-        arr[j] = arr[j + 1];
-        arr[j + 1] = temp;
+      if (arr[i].valor > arr[i + 1].valor) {
+        let temp = arr[i];
+        arr[i] = arr[i + 1];
+        arr[i + 1] = temp;
         huboIntercambio = true;
         yield { arr: [...arr] };
       }
 
-      // Regresar al estado por defecto los que se compararon
-      arr[j].estado = 'default';
-      arr[j + 1].estado = 'default';
+      arr[i].estado = 'default';
+      arr[i + 1].estado = 'default';
     }
 
-    // Marcar el elemento ya ordenado al final del recorrido
-    arr[n - 1 - i].estado = 'ordenado';
+    // El último elemento recorrido ya está en su posición final
+    arr[fin].estado = 'ordenado';
+    yield { arr: [...arr] };
 
-    if (!huboIntercambio) break; // Optimización si ya está ordenado
+    // Si no hubo intercambios en la ida, ya está ordenado
+    if (!huboIntercambio) break;
+
+    huboIntercambio = false;
+    fin--; // El límite derecho se reduce
+
+    // 2. Recorrido de derecha a izquierda (empuja el menor al principio)
+    for (let i = fin - 1; i >= inicio; i--) {
+      arr[i].estado = 'comparando';
+      arr[i + 1].estado = 'comparando';
+      yield { arr: [...arr] };
+
+      if (arr[i].valor > arr[i + 1].valor) {
+        let temp = arr[i];
+        arr[i] = arr[i + 1];
+        arr[i + 1] = temp;
+        huboIntercambio = true;
+        yield { arr: [...arr] };
+      }
+
+      arr[i].estado = 'default';
+      arr[i + 1].estado = 'default';
+    }
+
+    // El primer elemento recorrido ya está en su posición final
+    arr[inicio].estado = 'ordenado';
+    yield { arr: [...arr] };
+
+    inicio++; // El límite izquierdo avanza
   }
 
   // Asegurar que todos queden marcados como ordenados al final
