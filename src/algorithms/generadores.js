@@ -129,32 +129,39 @@ export function* insertionSortGenerador(arreglo) {
   let n = arr.length;
 
   for (let i = 1; i < n; i++) {
-    let key = arr[i];
-    let j = i - 1;
+    let j = i;
 
-    // Resaltar el elemento que se va a insertar
-    key.estado = 'minimo';
+    // Resaltar el elemento que va a "viajar" hacia atrás
+    arr[j].estado = 'minimo';
     yield { arr: [...arr] };
 
-    while (j >= 0 && arr[j].valor > key.valor) {
-      arr[j + 1].estado = 'comparando';
-      yield { arr: [...arr] };
+    // Mientras no lleguemos al inicio y el de la izquierda sea mayor
+    while (j > 0 && arr[j - 1].valor > arr[j].valor) {
+      arr[j - 1].estado = 'comparando'; // Marcamos con quién se va a comparar
+      yield { arr: [...arr] }; 
 
-      arr[j + 1] = arr[j];
-      j = j - 1;
-      yield { arr: [...arr] };
+      // Intercambio limpio (swap) en lugar de sobrescribir
+      let temp = arr[j];
+      arr[j] = arr[j - 1];
+      arr[j - 1] = temp;
+      yield { arr: [...arr] }; // Mostramos el movimiento en pantalla
+
+      // La barra mayor que dejamos atrás vuelve a la normalidad
+      arr[j].estado = 'default';
+      j--;
+      
+      // Mantenemos pintada la barra que sigue viajando hacia la izquierda
+      arr[j].estado = 'minimo';
     }
 
-    arr[j + 1] = key;
-
-    // Marcar progresivamente los elementos ya recorridos como ordenados hasta la posición i
+    // Al terminar de acomodar, marcamos todo el subgrupo izquierdo como ordenado
     for (let k = 0; k <= i; k++) {
       arr[k].estado = 'ordenado';
     }
     yield { arr: [...arr] };
   }
 
-  // Marcar todos como ordenados al finalizar
+  // Marcar todos como ordenados al finalizar por seguridad
   arr.forEach(d => d.estado = 'ordenado');
   yield { arr: [...arr], finalizado: true };
 }
